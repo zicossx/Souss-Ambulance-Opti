@@ -4,13 +4,19 @@
 ```
 database/
 ├── schema/
-│   ├── tables.sql     # Full schema — run this to create all tables
-│   └── CHANGELOG.md          # Track every schema change with dates
+│   ├── tables.sql              # Full schema — create all tables
+│   ├── triggers.sql            # All database triggers (business rules & automation)
+│   ├── procedures.sql          # Stored procedures (decision logic & calculations)
+│   └── CHANGELOG.md            # Track every schema change with dates
+
 ├── diagrams/
 │   └── erd.png                 # Entity-Relationship Diagram (pgAdmin generated)
+
 └── docs/
-    ├── ENTITIES.pdf            # Full entity documentation with attribute descriptions
-    └── pgadmin_setup_demo.mp4  # Video walkthrough — how to create the DB and run the script
+    ├── ENTITIES.pdf            # Full entity documentation
+    ├── TRIGGERS.md             # Explanation of each trigger (role, logic, justification)
+    ├── PROCEDURES.md           # Explanation of each stored procedure
+    └── pgadmin_setup_demo.mp4  # Demo video
 ```
 
 ---
