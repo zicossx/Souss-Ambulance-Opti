@@ -25,28 +25,26 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Procédure : Calcul trajet estimé (simplifié)
-CREATE OR REPLACE FUNCTION find_best_hospital(
-    p_lat DECIMAL,
-    p_lon DECIMAL
+CREATE OR REPLACE FUNCTION estimate_route(
+    a_lat DECIMAL,
+    a_lon DECIMAL,
+    h_lat DECIMAL,
+    h_lon DECIMAL
 )
 RETURNS TABLE (
-    service_id INT,
-    hospital_id INT,
-    score DECIMAL
+    distance_km DECIMAL,
+    duration_min INT
 ) AS $$
+DECLARE
+    dist DECIMAL;
 BEGIN
+    -- Distance simplifiée (Manhattan)
+    dist := ABS(a_lat - h_lat) + ABS(a_lon - h_lon);
+
     RETURN QUERY
     SELECT 
-        hs.service_id,
-        h.hospital_id,
-        (1 - (hs.occupied_beds::DECIMAL / hs.total_beds)) * 0.6
-        + (1 / (1 + ABS(h.latitude - p_lat) + ABS(h.longitude - p_lon))) * 0.4
-        AS score
-    FROM hospital_service hs
-    JOIN hospital h ON hs.hospital_id = h.hospital_id
-    WHERE hs.total_beds > hs.occupied_beds
-    ORDER BY score DESC
-    LIMIT 1;
+        dist * 111, -- approx km
+        (dist * 111 / 60) * 60; -- vitesse 60 km/h
 END;
 $$ LANGUAGE plpgsql;
 
