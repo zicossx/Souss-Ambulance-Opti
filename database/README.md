@@ -13,9 +13,6 @@ database/
 │   └── erd.png                 # Entity-Relationship Diagram (pgAdmin generated)
 
 └── docs/
-    ├── ENTITIES.pdf            # Full entity documentation
-    ├── TRIGGERS.md             # Explanation of each trigger (role, logic, justification)
-    ├── PROCEDURES.md           # Explanation of each stored procedure
     └── pgadmin_setup_demo.mp4  # Demo video
 ```
 
