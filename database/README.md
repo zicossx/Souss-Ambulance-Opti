@@ -5,7 +5,7 @@
 database/
 ├── schema/
 │   ├── tables.sql     # Full schema — run this to create all tables
-│   └── CHANGELOG.md            # Track every schema change with dates
+│   └── CHANGELOG.md          # Track every schema change with dates
 ├── diagrams/
 │   └── erd.png                 # Entity-Relationship Diagram (pgAdmin generated)
 └── docs/
