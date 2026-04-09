@@ -6,11 +6,12 @@ database/
 ├── schema/
 │   ├── tables.sql              # Full schema — create all tables
 │   ├── triggers.sql            # All database triggers (business rules & automation)
-│   ├── procedures.sql          # Stored procedures (decision logic & calculations)
-│   └── CHANGELOG.md            # Track every schema change with dates
+│   └── procedures.sql          # Stored procedures (decision logic & calculations)
 
 ├── diagrams/
-│   └── erd.png                 # Entity-Relationship Diagram (pgAdmin generated)
+|   ├── MCD/                    # MCD diagram (images)
+|   ├── ENTITY.xlsx             # Description of Entities
+│   └── erd.png                 # Entity-Relationship Diagram (DBeaver generated)
 
 └── docs/
     └── pgadmin_setup_demo.mp4  # Demo video
