@@ -1,0 +1,679 @@
+{% extends 'dashboard/base.html' %}
+{% load custom_filters %}
+
+{% block title %}{{ hospital.name }} - Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-small">
+                <i class="fas fa-plus"></i>
+            </div>
+            <span class="logo-text">ATLAS</span>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-item active" data-scroll-to="dashboard-top">
+                <i class="fas fa-chart-line"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="#" class="nav-item" data-scroll-to="ambulance-section">
+                <i class="fas fa-ambulance"></i>
+                <span>Ambulances</span>
+                {% if ambulances.count > 0 %}
+                    <span class="badge" id="ambulance-count">{{ ambulances.count }}</span>
+                {% endif %}
+            </a>
+            <a href="#" class="nav-item" data-scroll-to="beds-section">
+                <i class="fas fa-bed"></i>
+                <span>Bed Management</span>
+            </a>
+            <a href="#" class="nav-item" data-scroll-to="patients-section">
+                <i class="fas fa-user-injured"></i>
+                <span>Patients</span>
+                <span class="badge" id="patient-count">{{ patients.count }}</span>
+            </a>
+            <a href="#" class="nav-item" data-scroll-to="staff-section">
+                <i class="fas fa-user-md"></i>
+                <span>Staff</span>
+            </a>
+            <a href="#" class="nav-item" data-scroll-to="conditions-section">
+                <i class="fas fa-file-medical"></i>
+                <span>Conditions</span>
+            </a>
+            <a href="#" class="nav-item" data-scroll-to="activity-section">
+                <i class="fas fa-history"></i>
+                <span>History</span>
+            </a>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">
+                    {{ user.user.first_name|first }}{{ user.user.last_name|first }}
+                </div>
+                <div class="user-details">
+                    <span class="user-name">{{ user.user.get_full_name }}</span>
+                    <span class="user-role">{{ user.get_role_display }}</span>
+                </div>
+            </div>
+            <a href="{% url 'logout' %}" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+            </a>
+        </div>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Header -->
+        <header class="top-header">
+            <div class="hospital-info">
+                <h1>{{ hospital.name }}</h1>
+                <div class="hospital-meta">
+                    <span><i class="fas fa-map-marker-alt"></i> {{ hospital.city }}, {{ hospital.region }}</span>
+                    <span class="status-badge active">
+                        <i class="fas fa-check-circle"></i> Operational
+                    </span>
+                </div>
+            </div>
+            
+            <div class="header-actions">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="global-search" placeholder="Search patients, staff...">
+                </div>
+                <button class="btn-icon" id="btn-notifications">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-dot"></span>
+                </button>
+                <button class="btn-icon" id="btn-settings">
+                    <i class="fas fa-cog"></i>
+                </button>
+                <div class="datetime" id="datetime">
+                    <span class="time">--:--</span>
+                    <span class="date">--/--/----</span>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+            <!-- Live Map Section -->
+            <section class="card card-large map-card" id="dashboard-top">
+                <div class="card-header">
+                    <h3><i class="fas fa-map-marked-alt"></i> Live Ambulance Tracking</h3>
+                    <div class="map-controls">
+                        <button class="btn-sm" id="btn-center-map">
+                            <i class="fas fa-crosshairs"></i> Center
+                        </button>
+                        <button class="btn-sm" id="btn-refresh-ambulances">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+                <div id="ambulance-map" class="map-container"></div>
+                <div class="map-legend">
+                    <div class="legend-item">
+                        <span class="marker-hospital"></span> Hospital
+                    </div>
+                    <div class="legend-item">
+                        <span class="marker-ambulance"></span> Ambulance
+                    </div>
+                    <div class="legend-item">
+                        <span class="marker-destination"></span> Destination
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Incoming Ambulances List -->
+            <section class="card card-medium ambulance-list" id="ambulance-section">
+                <div class="card-header">
+                    <h3><i class="fas fa-ambulance"></i> Incoming</h3>
+                    <span class="count-badge" id="incoming-count">{{ ambulances.count }} Active</span>
+                </div>
+                <div class="ambulance-items" id="ambulance-list">
+                    {% for amb in ambulances %}
+                    <div class="ambulance-item" data-id="{{ amb.id }}">
+                        <div class="ambulance-icon">
+                            <i class="fas fa-ambulance"></i>
+                        </div>
+                        <div class="ambulance-info">
+                            <h4>{{ amb.vehicle_number }}</h4>
+                            <p>{{ amb.driver_name }}</p>
+                            <span class="condition-tag">{{ amb.patient_condition|truncatechars:30 }}</span>
+                        </div>
+                        <div class="ambulance-meta">
+                            <span class="eta">
+                                <i class="fas fa-clock"></i> <span class="eta-time">{{ amb.eta_minutes }}</span> min
+                            </span>
+                            <button class="btn-sm btn-arrived" data-ambulance-id="{{ amb.id }}">
+                                Arrived
+                            </button>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-state">
+                        <i class="fas fa-check-circle"></i>
+                        <p>No incoming ambulances</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+            
+            <!-- Bed Availability -->
+            <section class="card card-medium beds-card" id="beds-section">
+                <div class="card-header">
+                    <h3><i class="fas fa-bed"></i> Bed Availability</h3>
+                    <div>
+                        {% if is_admin %}
+                        <button class="btn-sm btn-edit" id="btn-edit-beds">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="beds-grid" id="beds-container">
+                    {% for bed in beds %}
+                    <div class="bed-item" data-bed-type="{{ bed.bed_type }}" id="bed-{{ bed.bed_type }}">
+                        <div class="bed-icon bed-{{ bed.bed_type }}">
+                            <i class="fas fa-bed"></i>
+                        </div>
+                        <div class="bed-info">
+                            <span class="bed-type">{{ bed.get_bed_type_display }}</span>
+                            <div class="bed-stats">
+                                <span class="available" data-bed-avail="{{ bed.bed_type }}">{{ bed.available_beds }}</span>
+                                <span class="separator">/</span>
+                                <span class="total" data-bed-total="{{ bed.bed_type }}">{{ bed.total_beds }}</span>
+                            </div>
+                        </div>
+                        {% if is_admin %}
+                        <div class="bed-controls">
+                            <button class="btn-tiny btn-bed-adjust" data-bed-type="{{ bed.bed_type }}" data-action="decrement" title="Decrease available">-</button>
+                            <button class="btn-tiny btn-bed-adjust" data-bed-type="{{ bed.bed_type }}" data-action="increment" title="Increase available">+</button>
+                        </div>
+                        {% endif %}
+                        <div class="bed-bar">
+                            <div class="bed-progress" data-bed-progress="{{ bed.bed_type }}" data-percentage="{{ bed.available_beds }}" data-total="{{ bed.total_beds }}"></div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-state">
+                        <p>No bed data available</p>
+                        {% if is_admin %}
+                        <button class="btn-sm" id="btn-add-beds-empty" style="margin-top: 1rem;">
+                            <i class="fas fa-plus"></i> Add Beds
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if is_admin and beds %}
+                <div class="bed-summary" style="padding: 1rem; border-top: 1px solid var(--gray-100); text-align: center;">
+                    <small>Total: <strong id="total-beds-all">{{ total_beds }}</strong> beds, <strong id="available-beds-all">{{ available_beds }}</strong> available</small>
+                </div>
+                {% endif %}
+            </section>
+            
+            <!-- Quick Stats -->
+            <section class="card card-small stats-card">
+                <div class="stat-item">
+                    <div class="stat-icon patients">
+                        <i class="fas fa-user-injured"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="stat-patients">{{ patients.count }}</span>
+                        <span class="stat-label">Active Patients</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon staff">
+                        <i class="fas fa-user-md"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="stat-staff">{{ staff.count }}</span>
+                        <span class="stat-label">Staff On Duty</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon critical">
+                        <i class="fas fa-heartbeat"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="stat-critical">{{ critical_count }}</span>
+                        <span class="stat-label">Critical Cases</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon occupancy">
+                        <i class="fas fa-percentage"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="stat-occupancy">{{ occupancy_rate }}%</span>
+                        <span class="stat-label">Occupancy Rate</span>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Staff on Duty -->
+            <section class="card card-medium staff-card" id="staff-section">
+                <div class="card-header">
+                    <h3><i class="fas fa-users"></i> Staff on Duty</h3>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <button class="btn-sm" id="btn-refresh-staff">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                        {% if is_admin %}
+                        <button class="btn-sm btn-primary" id="btn-add-staff">
+                            <i class="fas fa-plus"></i> Add
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="staff-list" id="staff-list">
+                    {% for member in staff|slice:":5" %}
+                    <div class="staff-item" data-staff-id="{{ member.id }}">
+                        <div class="staff-avatar">
+                            {{ member.user.first_name|first }}{{ member.user.last_name|first }}
+                        </div>
+                        <div class="staff-info">
+                            <h4>{{ member.user.get_full_name }}</h4>
+                            <p>{{ member.department|default:"General" }} • {{ member.get_role_display }}</p>
+                        </div>
+                        {% if is_admin %}
+                        <button class="btn-tiny btn-toggle-staff" data-staff-id="{{ member.id }}" title="Toggle availability">
+                            <i class="fas fa-toggle-on"></i>
+                        </button>
+                        {% else %}
+                        <span class="status-dot online"></span>
+                        {% endif %}
+                    </div>
+                    {% empty %}
+                    <div class="empty-state">
+                        <p>No staff on duty</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+            
+            <!-- Medical Conditions -->
+            <section class="card card-medium conditions-card" id="conditions-section">
+                <div class="card-header">
+                    <h3><i class="fas fa-file-medical"></i> Conditions Treated</h3>
+                    {% if is_admin %}
+                    <button class="btn-sm" id="btn-add-condition">
+                        <i class="fas fa-plus"></i> Add
+                    </button>
+                    {% endif %}
+                </div>
+                <div class="conditions-list" id="conditions-list">
+                    {% for condition in conditions|slice:":6" %}
+                    <div class="condition-item severity-{{ condition.severity }}" data-condition-id="{{ condition.id }}">
+                        <div class="condition-header">
+                            <h4>{{ condition.name }}</h4>
+                            <div>
+                                <span class="severity-badge">{{ condition.get_severity_display }}</span>
+                                {% if is_admin %}
+                                <button class="btn-tiny btn-delete-condition" data-condition-id="{{ condition.id }}" style="margin-left: 0.5rem;">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <p>{{ condition.description|truncatechars:60 }}</p>
+                        <div class="condition-footer">
+                            <span><i class="fas fa-clipboard-list"></i> Protocol active</span>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-state">
+                        <p>No conditions registered</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+            
+            <!-- Recent Patients -->
+            <section class="card card-large patients-card" id="patients-section">
+                <div class="card-header">
+                    <h3><i class="fas fa-procedures"></i> Recent Admissions</h3>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <div class="header-filters">
+                            <button class="filter-btn active" data-filter="all">All</button>
+                            <button class="filter-btn" data-filter="critical">Critical</button>
+                            <button class="filter-btn" data-filter="waiting">Waiting</button>
+                        </div>
+                        <button class="btn-sm btn-primary" id="btn-add-patient">
+                            <i class="fas fa-plus"></i> Add Patient
+                        </button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="patients-table">
+                        <thead>
+                            <tr>
+                                <th>Patient</th>
+                                <th>CIN</th>
+                                <th>Age/Gender</th>
+                                <th>Condition</th>
+                                <th>Status</th>
+                                <th>Doctor</th>
+                                <th>Admitted</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="patients-tbody">
+                            {% for patient in patients|slice:":10" %}
+                            <tr data-patient-status="{{ patient.status }}" data-patient-id="{{ patient.id }}">
+                                <td>
+                                    <div class="patient-cell">
+                                        <div class="patient-avatar">
+                                            {{ patient.full_name|first }}
+                                        </div>
+                                        <span>{{ patient.full_name }}</span>
+                                    </div>
+                                </td>
+                                <td>{{ patient.cin }}</td>
+                                <td>{{ patient.age }} / {{ patient.get_gender_display }}</td>
+                                <td>{{ patient.condition|truncatechars:30 }}</td>
+                                <td>
+                                    <select class="status-select" data-patient-id="{{ patient.id }}">
+                                        <option value="waiting" {% if patient.status == "waiting" %}selected{% endif %}>Waiting</option>
+                                        <option value="critical" {% if patient.status == "critical" %}selected{% endif %}>Critical</option>
+                                        <option value="in_treatment" {% if patient.status == "in_treatment" %}selected{% endif %}>In Treatment</option>
+                                        <option value="stable" {% if patient.status == "stable" %}selected{% endif %}>Stable</option>
+                                        <option value="discharged" {% if patient.status == "discharged" %}selected{% endif %}>Discharged</option>
+                                    </select>
+                                </td>
+                                <td>{{ patient.assigned_doctor.user.get_full_name|default:"Unassigned" }}</td>
+                                <td>{{ patient.admitted_at|timesince }} ago</td>
+                                <td>
+                                    <button class="btn-tiny btn-view-patient" data-patient-id="{{ patient.id }}">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr class="empty-row">
+                                <td colspan="8" class="text-center">No recent admissions</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            
+            <!-- Activity History -->
+            <section class="card card-large" id="activity-section">
+                <div class="card-header">
+                    <h3><i class="fas fa-history"></i> Recent Activity Log</h3>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <tbody id="activity-list">
+                            {% for patient in patients|slice:":5" %}
+                            <tr>
+                                <td style="width: 50px; text-align: center;"><i class="fas fa-user-plus" style="color: var(--primary);"></i></td>
+                                <td><strong>Patient Admitted:</strong> {{ patient.full_name }}</td>
+                                <td style="text-align: right; color: var(--gray-500);"><small>{{ patient.admitted_at|timesince }} ago</small></td>
+                            </tr>
+                            {% endfor %}
+                            {% for entry in ambulances|slice:":5" %}
+                            <tr>
+                                <td style="width: 50px; text-align: center;"><i class="fas fa-ambulance" style="color: var(--secondary);"></i></td>
+                                <td><strong>Ambulance En Route:</strong> {{ entry.vehicle_number }}</td>
+                                <td style="text-align: right; color: var(--gray-500);"><small>{{ entry.last_updated|timesince }} ago</small></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<!-- Data for JavaScript -->
+<div id="django-data" 
+     data-hospital-lat="{{ hospital.latitude|default_if_none:'31.7917' }}"
+     data-hospital-lng="{{ hospital.longitude|default_if_none:'-7.0926' }}"
+     data-hospital-name="{{ hospital.name|default:'Hospital'|escapejs }}"
+     data-is-admin="{% if is_admin %}true{% else %}false{% endif %}"
+     style="display: none;">
+</div>
+
+<!-- Bed Update Modal -->
+{% if is_admin %}
+<div id="bedModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-bed"></i> Update Bed Availability</h3>
+            <button class="close-btn" id="btn-close-bed-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="bedForm">
+                {% csrf_token %}
+                <div class="form-row">
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Bed Type</label>
+                        <select name="bed_type" id="bedType" required>
+                            <option value="emergency">Emergency</option>
+                            <option value="icu">ICU</option>
+                            <option value="general">General Ward</option>
+                            <option value="pediatric">Pediatric</option>
+                            <option value="maternity">Maternity</option>
+                            <option value="covid">COVID-19 Isolation</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Total Beds</label>
+                        <input type="number" name="total_beds" id="totalBeds" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Available Beds</label>
+                        <input type="number" name="available_beds" id="availableBeds" min="0" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" id="btn-cancel-bed">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Add Patient Modal -->
+<div id="patientModal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3><i class="fas fa-user-injured"></i> Add New Patient</h3>
+            <button class="close-btn" id="btn-close-patient-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="patientForm">
+                {% csrf_token %}
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" name="full_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>CIN</label>
+                        <input type="text" name="cin" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Age</label>
+                        <input type="number" name="age" min="0" max="120" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Gender</label>
+                        <select name="gender" required>
+                            <option value="M">Male</option>
+                            <option value="F">Female</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Phone</label>
+                        <input type="text" name="phone">
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select name="status">
+                            <option value="waiting">Waiting</option>
+                            <option value="critical">Critical</option>
+                            <option value="in_treatment">In Treatment</option>
+                            <option value="stable">Stable</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>Condition / Symptoms</label>
+                    <textarea name="condition" rows="3" style="width: 100%; padding: 0.75rem; border: 1px solid var(--gray-200); border-radius: 0.5rem;"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" id="btn-cancel-patient">Cancel</button>
+                    <button type="submit" class="btn-primary">Add Patient</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Condition Modal -->
+{% if is_admin %}
+<div id="conditionModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-file-medical"></i> Add Condition</h3>
+            <button class="close-btn" id="btn-close-condition-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="conditionForm">
+                {% csrf_token %}
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>Condition Name</label>
+                    <input type="text" name="name" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--gray-200); border-radius: 0.5rem;">
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>Severity</label>
+                    <select name="severity" style="width: 100%; padding: 0.75rem; border: 1px solid var(--gray-200); border-radius: 0.5rem;">
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                        <option value="critical">Critical</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>Description</label>
+                    <textarea name="description" rows="3" style="width: 100%; padding: 0.75rem; border: 1px solid var(--gray-200); border-radius: 0.5rem;"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" id="btn-cancel-condition">Cancel</button>
+                    <button type="submit" class="btn-primary">Add Condition</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</div>
+{% endif %}
+
+<!-- Add Staff Modal -->
+{% if is_admin %}
+<div id="staffModal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3><i class="fas fa-user-md"></i> Add Staff Member</h3>
+            <button class="close-btn" id="btn-close-staff-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="staffForm">
+                {% csrf_token %}
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>First Name</label>
+                        <input type="text" name="first_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Last Name</label>
+                        <input type="text" name="last_name" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" name="password" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" name="email">
+                    </div>
+                    <div class="form-group">
+                        <label>Phone</label>
+                        <input type="text" name="phone">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Role</label>
+                        <select name="role" required>
+                            <option value="doctor">Doctor</option>
+                            <option value="nurse">Nurse</option>
+                            <option value="staff">General Staff</option>
+                            <option value="admin">Administrator</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Department</label>
+                        <input type="text" name="department" placeholder="e.g. Cardiology">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" id="btn-cancel-staff">Cancel</button>
+                    <button type="submit" class="btn-primary">Add Staff</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Patient View Modal -->
+<div id="patientViewModal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3><i class="fas fa-file-medical-alt"></i> Patient History & Details</h3>
+            <button class="close-btn" id="btn-close-patient-view-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="patientViewContent">
+                <div class="text-center" style="padding: 2rem;">
+                    <i class="fas fa-spinner fa-spin fa-2x" style="color: var(--primary);"></i>
+                    <p style="margin-top: 1rem;">Loading details...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" id="btn-close-patient-view">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% load static %}
+<script src="{% static 'js/app.js' %}"></script>
+{% endblock %}

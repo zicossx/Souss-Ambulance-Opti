@@ -1,0 +1,31 @@
+# Flutter
+**/mobile-app/.dart_tool/
+**/mobile-app/.flutter-plugins
+**/mobile-app/.flutter-plugins-dependencies
+**/mobile-app/.packages
+**/mobile-app/.pub-cache/
+**/mobile-app/.pub/
+**/mobile-app/build/
+**/mobile-app/android/local.properties
+**/mobile-app/ios/Flutter/Generated.xcconfig
+**/mobile-app/ios/Flutter/ephemeral/
+
+# Python/Django
+**/dashboard/venv/
+**/dashboard/*.log
+**/dashboard/db.sqlite3
+**/dashboard/__pycache__/
+**/__pycache__/
+*.pyc
+
+# PHP
+**/api/.env
+**/api/debug_db.php
+
+# OS & IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.log
