@@ -1,6 +1,6 @@
 # 🚑 Souss Ambulance Opti
 
-![Souss Ambulance Hero](souss_ambulance_opti_AI/mobile-app/assets/hero.png)
+![Souss Ambulance Hero](mobile-app/assets/hero.png)
 
 ## 🌐 Overview
 **Souss Ambulance Opti** is a cutting-edge, integrated emergency medical response system designed to revolutionize ambulance dispatching and hospital coordination. By combining real-time geolocation, advanced driver-patient matching, and a robust hospital management dashboard, we ensure that every second counts when saving lives.
