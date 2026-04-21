@@ -14,7 +14,6 @@ urlpatterns = [
     # Patient Management
     path('api/patients/', views.get_patients_api, name='get_patients'),
     path('api/patients/add/', views.add_patient, name='add_patient'),
-    path('api/patients/<int:patient_id>/history/', views.get_patient_history, name='get_patient_history'),
     path('api/patients/<int:patient_id>/status/', views.update_patient_status, name='update_patient_status'),
     
     # Ambulance Management
@@ -23,7 +22,6 @@ urlpatterns = [
     
     # Staff Management
     path('api/staff/', views.get_staff_api, name='get_staff'),
-    path('api/staff/add/', views.add_staff, name='add_staff'),
     path('api/staff/<int:staff_id>/toggle/', views.toggle_staff_availability, name='toggle_staff'),
     
     # Conditions Management

@@ -53,14 +53,12 @@ def signup_view(request):
                 license_number = request.POST.get('license_number')
                 latitude = request.POST.get('latitude')
                 longitude = request.POST.get('longitude')
-                emergency_capacity = request.POST.get('emergency_capacity', 50)
                 
                 # Admin user data
                 first_name = request.POST.get('first_name')
                 last_name = request.POST.get('last_name')
                 username = request.POST.get('username')
                 password = request.POST.get('password')
-                confirm_password = request.POST.get('confirm_password')
                 admin_phone = request.POST.get('admin_phone')
                 
                 # Validate required fields
@@ -68,15 +66,6 @@ def signup_view(request):
                            license_number, latitude, longitude, first_name, 
                            last_name, username, password, admin_phone]):
                     messages.error(request, 'All fields are required.')
-                    return render(request, 'dashboard/signup.html')
-                
-                # Check passwords match
-                if password != confirm_password:
-                    messages.error(request, 'Passwords do not match.')
-                    return render(request, 'dashboard/signup.html')
-                
-                if len(password) < 8:
-                    messages.error(request, 'Password must be at least 8 characters.')
                     return render(request, 'dashboard/signup.html')
                 
                 # Check if username exists
@@ -94,7 +83,7 @@ def signup_view(request):
                     messages.error(request, 'Email already registered.')
                     return render(request, 'dashboard/signup.html')
                 
-                # Create Hospital — store password directly in hospitals table
+                # Create Hospital
                 hospital = Hospital.objects.create(
                     name=hospital_name,
                     address=address,
@@ -103,14 +92,12 @@ def signup_view(request):
                     phone=phone,
                     email=email,
                     license_number=license_number,
-                    emergency_capacity=int(emergency_capacity),
                     latitude=float(latitude),
                     longitude=float(longitude),
-                    password=password,   # store plain password in hospitals table
                     is_active=True
                 )
                 
-                # Create Django User (handles hashed auth password)
+                # Create Django User
                 user = User.objects.create_user(
                     username=username,
                     password=password,
@@ -131,12 +118,12 @@ def signup_view(request):
                 
                 # Initialize default bed types
                 default_beds = [
-                    ('emergency', 8),
-                    ('icu', 5),
-                    ('general', 30),
-                    ('pediatric', 8),
-                    ('maternity', 6),
-                    ('covid', 4)
+                    ('emergency', 5),
+                    ('icu', 3),
+                    ('general', 20),
+                    ('pediatric', 5),
+                    ('maternity', 5),
+                    ('covid', 2)
                 ]
                 
                 for bed_type, total in default_beds:
@@ -148,7 +135,7 @@ def signup_view(request):
                         updated_by=None
                     )
                 
-                messages.success(request, f'✅ Hospital "{hospital_name}" registered! You can now log in with username: {username}')
+                messages.success(request, 'Hospital registered successfully! Please log in.')
                 return redirect('login')
                 
         except Exception as e:
@@ -167,7 +154,7 @@ def dashboard_view(request):
         beds = BedAvailability.objects.filter(hospital=hospital)
         ambulances = Ambulance.objects.filter(
             destination_hospital=hospital,
-            is_online=True
+            status='en_route'
         ).select_related('destination_hospital')
         
         patients = Patient.objects.filter(
@@ -305,15 +292,9 @@ def add_patient(request):
         hospital_user = HospitalUser.objects.get(user=request.user)
         hospital = hospital_user.hospital
         
-        # Split full_name into first and last name for the legacy table
-        name_parts = data.get('full_name', '').split(' ', 1)
-        f_name = name_parts[0]
-        l_name = name_parts[1] if len(name_parts) > 1 else ''
-
         patient = Patient.objects.create(
             hospital=hospital,
-            first_name=f_name,
-            last_name=l_name,
+            full_name=data.get('full_name'),
             cin=data.get('cin'),
             age=int(data.get('age', 0)),
             gender=data.get('gender'),
@@ -388,13 +369,12 @@ def get_patients_api(request):
         
         if search:
             patients = patients.filter(
-                Q(first_name__icontains=search) | 
-                Q(last_name__icontains=search) | 
+                Q(full_name__icontains=search) | 
                 Q(cin__icontains=search)
             )
         
         patients_data = list(patients.values(
-            'id', 'first_name', 'last_name', 'cin', 'age', 'gender',
+            'id', 'full_name', 'cin', 'age', 'gender',
             'status', 'condition', 'admitted_at',
             assigned_doctor_name=F('assigned_doctor__user__first_name')
         ))
@@ -408,37 +388,6 @@ def get_patients_api(request):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
 
-@login_required
-def get_patient_history(request, patient_id):
-    try:
-        hospital_user = HospitalUser.objects.get(user=request.user)
-        patient = Patient.objects.get(id=patient_id, hospital=hospital_user.hospital)
-        
-        doctor_name = patient.assigned_doctor.user.get_full_name() if patient.assigned_doctor else 'Unassigned'
-        ambulance_number = patient.ambulance.vehicle_number if patient.ambulance else 'None'
-
-        return JsonResponse({
-            'success': True,
-            'patient': {
-                'id': patient.id,
-                'full_name': patient.full_name,
-                'cin': patient.cin,
-                'age': patient.age,
-                'gender': patient.get_gender_display(),
-                'phone': patient.phone,
-                'address': patient.address,
-                'condition': patient.condition,
-                'status': patient.get_status_display(),
-                'admitted_at': patient.admitted_at.strftime("%b %d, %Y %I:%M %p"),
-                'assigned_doctor': doctor_name,
-                'ambulance': ambulance_number
-            }
-        })
-    except Patient.DoesNotExist:
-        return JsonResponse({'error': 'Patient not found or access denied'}, status=404)
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=400)
-
 # ==================== AMBULANCE API ====================
 
 @login_required
@@ -449,10 +398,10 @@ def get_ambulances_api(request):
         
         ambulances = Ambulance.objects.filter(
             destination_hospital=hospital
-        ).exclude(is_online=False).values(
-            'id', 'vehicle_number', 'first_name', 'last_name', 'driver_phone',
+        ).exclude(status='available').values(
+            'id', 'vehicle_number', 'driver_name', 'driver_phone',
             'current_latitude', 'current_longitude',
-            'patient_condition', 'eta_minutes', 'patient_name'
+            'patient_condition', 'eta_minutes', 'patient_name', 'status'
         )
         
         return JsonResponse({
@@ -479,12 +428,11 @@ def update_ambulance_status(request, ambulance_id):
             destination_hospital=hospital_user.hospital
         )
         
-        # ambulance.status is now a property based on is_online
-        new_status = data.get('status')
-        if new_status == 'arrived':
+        ambulance.status = data.get('status')
+        if data.get('status') == 'arrived':
             ambulance.eta_minutes = 0
-            # If arrived and trip complete, we might set is_online or just update last_updated
-            ambulance.save()
+        
+        ambulance.save()
         
         return JsonResponse({
             'success': True,
@@ -547,49 +495,6 @@ def toggle_staff_availability(request, staff_id):
         
     except HospitalUser.DoesNotExist:
         return JsonResponse({'error': 'Staff not found'}, status=404)
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=400)
-
-@login_required
-@require_http_methods(["POST"])
-def add_staff(request):
-    try:
-        data = json.loads(request.body)
-        hospital_user = HospitalUser.objects.get(user=request.user)
-        
-        if hospital_user.role != 'admin':
-            return JsonResponse({'error': 'Permission denied. Admins only.'}, status=403)
-            
-        username = data.get('username')
-        email = data.get('email', '')
-        password = data.get('password')
-        
-        if User.objects.filter(username=username).exists():
-            return JsonResponse({'error': 'Username already exists'}, status=400)
-            
-        with transaction.atomic():
-            user = User.objects.create_user(
-                username=username,
-                email=email,
-                password=password,
-                first_name=data.get('first_name', ''),
-                last_name=data.get('last_name', '')
-            )
-            
-            new_staff = HospitalUser.objects.create(
-                user=user,
-                hospital=hospital_user.hospital,
-                role=data.get('role', 'staff'),
-                phone=data.get('phone', ''),
-                department=data.get('department', ''),
-                is_available=True
-            )
-            
-        return JsonResponse({
-            'success': True,
-            'message': f'Staff member {user.username} created successfully.'
-        })
-        
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
 

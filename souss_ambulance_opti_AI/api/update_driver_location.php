@@ -8,7 +8,7 @@ $latitude = $data['latitude'] ?? $_POST['latitude'] ?? 0;
 $longitude = $data['longitude'] ?? $_POST['longitude'] ?? 0;
 
 try {
-    $stmt = $pdo->prepare("UPDATE drivers SET latitude = ?, longitude = ?, last_updated = NOW() WHERE id = ?");
+    $stmt = $pdo->prepare("UPDATE drivers SET latitude = ?, longitude = ?, last_updated = CURRENT_TIMESTAMP WHERE id = ?");
     $stmt->execute([$latitude, $longitude, $driverId]);
     
     echo json_encode(['success' => true]);

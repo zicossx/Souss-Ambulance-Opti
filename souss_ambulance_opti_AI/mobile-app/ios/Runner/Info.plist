@@ -2,6 +2,17 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- أذونات الموقع (مضافة) -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>يحتاج التطبيق إلى موقعك لتحديد موقع سيارة الإسعاف وعرض المستشفيات القريبة.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>يحتاج التطبيق إلى موقعك في الخلفية لتحديث موقع السيارة أثناء التنقل.</string>
+
+	<!-- Google Maps API Key -->
+	<key>GMSApiKey</key>
+	<string>AIzaSyAuAI0WeycFfPLy9VF8Ja-dz4f6lmcxufQ</string>
+
+	<!-- باقي الإعدادات الأصلية -->
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
@@ -68,3 +79,8 @@
 	</array>
 </dict>
 </plist>
+<key>LSApplicationQueriesSchemes</key>
+<array>
+    <string>https</string>
+    <string>http</string>
+</array>

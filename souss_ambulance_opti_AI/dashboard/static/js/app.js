@@ -121,12 +121,11 @@ function updateAmbulanceMarkers(ambulances) {
             iconAnchor: [18, 18]
         });
         
-        const driverName = `${amb.first_name || ''} ${amb.last_name || ''}`.trim() || 'N/A';
         const marker = L.marker([amb.current_latitude, amb.current_longitude], { icon })
             .addTo(map)
             .bindPopup(`
                 <b>Ambulance ${amb.vehicle_number}</b><br>
-                Driver: ${driverName}<br>
+                Driver: ${amb.driver_name}<br>
                 Patient: ${amb.patient_name || 'N/A'}<br>
                 ETA: ${amb.eta_minutes} min
             `);
@@ -152,16 +151,14 @@ function updateAmbulanceList(ambulances) {
         return;
     }
     
-    container.innerHTML = ambulances.map(amb => {
-        const driverName = `${amb.first_name || ''} ${amb.last_name || ''}`.trim() || 'N/A';
-        return `
+    container.innerHTML = ambulances.map(amb => `
         <div class="ambulance-item" data-id="${amb.id}">
             <div class="ambulance-icon">
                 <i class="fas fa-ambulance"></i>
             </div>
             <div class="ambulance-info">
                 <h4>${amb.vehicle_number}</h4>
-                <p>${driverName}</p>
+                <p>${amb.driver_name}</p>
                 <span class="condition-tag">${amb.patient_condition || 'No condition specified'}</span>
             </div>
             <div class="ambulance-meta">
@@ -173,7 +170,7 @@ function updateAmbulanceList(ambulances) {
                 </button>
             </div>
         </div>
-    `}).join('');
+    `).join('');
 }
 
 function centerMap() {
@@ -234,28 +231,8 @@ function initEventListeners() {
         }
     });
     
-    // Sidebar Navigation (Smooth Scroll)
-    document.querySelectorAll('.sidebar-nav .nav-item[data-scroll-to]').forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            document.querySelectorAll('.sidebar-nav .nav-item').forEach(n => n.classList.remove('active'));
-            this.classList.add('active');
-            
-            const targetId = this.getAttribute('data-scroll-to');
-            const targetEl = document.getElementById(targetId);
-            if (targetEl) {
-                targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        });
-    });
-    
     // Staff management
     document.getElementById('btn-refresh-staff')?.addEventListener('click', refreshStaff);
-    document.getElementById('btn-add-staff')?.addEventListener('click', openStaffModal);
-    document.getElementById('btn-close-staff-modal')?.addEventListener('click', closeStaffModal);
-    document.getElementById('btn-cancel-staff')?.addEventListener('click', closeStaffModal);
-    document.getElementById('staffForm')?.addEventListener('submit', saveStaff);
-    
     document.getElementById('staff-list')?.addEventListener('click', function(e) {
         const btn = e.target.closest('.btn-toggle-staff');
         if (btn) {
@@ -294,8 +271,6 @@ function initEventListeners() {
             viewPatient(patientId);
         }
     });
-    document.getElementById('btn-close-patient-view-modal')?.addEventListener('click', closePatientViewModal);
-    document.getElementById('btn-close-patient-view')?.addEventListener('click', closePatientViewModal);
     
     // Condition management
     document.getElementById('btn-add-condition')?.addEventListener('click', openConditionModal);
@@ -482,61 +457,8 @@ function filterPatients(filter, btn) {
     });
 }
 
-function closePatientViewModal() {
-    document.getElementById('patientViewModal')?.classList.remove('active');
-}
-
 function viewPatient(id) {
-    document.getElementById('patientViewContent').innerHTML = `
-        <div class="text-center" style="padding: 2rem;">
-            <i class="fas fa-spinner fa-spin fa-2x" style="color: var(--primary);"></i>
-            <p style="margin-top: 1rem;">Loading details...</p>
-        </div>
-    `;
-    document.getElementById('patientViewModal')?.classList.add('active');
-
-    fetch(`/api/patients/${id}/history/`)
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                const p = data.patient;
-                document.getElementById('patientViewContent').innerHTML = `
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <div>
-                            <p><strong>Name:</strong> ${p.full_name}</p>
-                            <p><strong>CIN:</strong> ${p.cin}</p>
-                            <p><strong>Age/Gender:</strong> ${p.age} / ${p.gender}</p>
-                            <p><strong>Phone:</strong> ${p.phone || 'N/A'}</p>
-                        </div>
-                        <div>
-                            <p><strong>Status:</strong> <span class="status-badge">${p.status}</span></p>
-                            <p><strong>Admitted:</strong> ${p.admitted_at}</p>
-                            <p><strong>Doctor:</strong> ${p.assigned_doctor}</p>
-                            <p><strong>Ambulance:</strong> ${p.ambulance}</p>
-                        </div>
-                    </div>
-                    <div style="margin-top: 1rem; padding: 1rem; background: var(--gray-50); border-radius: 0.5rem;">
-                        <p><strong>Condition/Symptoms:</strong></p>
-                        <p style="margin-top: 0.5rem; color: var(--gray-700);">${p.condition || 'No condition details provided.'}</p>
-                    </div>
-                `;
-            } else {
-                document.getElementById('patientViewContent').innerHTML = `
-                    <div class="text-center" style="padding: 2rem; color: var(--danger);">
-                        <i class="fas fa-exclamation-circle fa-2x"></i>
-                        <p style="margin-top: 1rem;">${data.error || 'Failed to load details'}</p>
-                    </div>
-                `;
-            }
-        })
-        .catch(e => {
-            document.getElementById('patientViewContent').innerHTML = `
-                <div class="text-center" style="padding: 2rem; color: var(--danger);">
-                    <i class="fas fa-wifi fa-2x"></i>
-                    <p style="margin-top: 1rem;">Network error. Please try again.</p>
-                </div>
-            `;
-        });
+    showNotification(`Viewing patient ${id} (detail view coming soon)`, 'info');
 }
 
 // ==================== STAFF MANAGEMENT ====================
@@ -550,50 +472,6 @@ function refreshStaff() {
             }
         })
         .catch(e => console.error('Error loading staff:', e));
-}
-
-function openStaffModal() {
-    document.getElementById('staffModal')?.classList.add('active');
-}
-
-function closeStaffModal() {
-    document.getElementById('staffModal')?.classList.remove('active');
-    document.getElementById('staffForm')?.reset();
-}
-
-function saveStaff(e) {
-    e.preventDefault();
-    const form = e.target;
-    const data = {
-        first_name: form.first_name.value,
-        last_name: form.last_name.value,
-        username: form.username.value,
-        password: form.password.value,
-        email: form.email.value,
-        phone: form.phone.value,
-        role: form.role.value,
-        department: form.department.value
-    };
-    
-    fetch('/api/staff/add/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify(data)
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            showNotification(data.message || 'Staff added successfully', 'success');
-            closeStaffModal();
-            setTimeout(() => location.reload(), 1000);
-        } else {
-            showNotification(data.error || 'Failed to add staff', 'error');
-        }
-    })
-    .catch(e => showNotification('Network error', 'error'));
 }
 
 function toggleStaff(id, btn) {

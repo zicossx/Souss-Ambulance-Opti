@@ -21,10 +21,6 @@ try {
         // Ensure numeric fields are correctly typed
         $user['id'] = (int)$user['id'];
         
-        // 🟢 ADDED: Automatically set driver online upon login
-        $pdo->prepare("UPDATE drivers SET is_online = 1 WHERE id = ?")->execute([$user['id']]);
-        $user['is_online'] = 1;
-        
         echo json_encode([
             'success' => true,
             'user' => $user

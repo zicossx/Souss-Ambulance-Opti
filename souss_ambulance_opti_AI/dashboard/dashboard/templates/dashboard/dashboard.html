@@ -15,35 +15,35 @@
         </div>
         
         <nav class="sidebar-nav">
-            <a href="#" class="nav-item active" data-scroll-to="dashboard-top">
+            <a href="#" class="nav-item active">
                 <i class="fas fa-chart-line"></i>
                 <span>Dashboard</span>
             </a>
-            <a href="#" class="nav-item" data-scroll-to="ambulance-section">
+            <a href="#" class="nav-item">
                 <i class="fas fa-ambulance"></i>
                 <span>Ambulances</span>
                 {% if ambulances.count > 0 %}
                     <span class="badge" id="ambulance-count">{{ ambulances.count }}</span>
                 {% endif %}
             </a>
-            <a href="#" class="nav-item" data-scroll-to="beds-section">
+            <a href="#" class="nav-item">
                 <i class="fas fa-bed"></i>
                 <span>Bed Management</span>
             </a>
-            <a href="#" class="nav-item" data-scroll-to="patients-section">
+            <a href="#" class="nav-item">
                 <i class="fas fa-user-injured"></i>
                 <span>Patients</span>
                 <span class="badge" id="patient-count">{{ patients.count }}</span>
             </a>
-            <a href="#" class="nav-item" data-scroll-to="staff-section">
+            <a href="#" class="nav-item">
                 <i class="fas fa-user-md"></i>
                 <span>Staff</span>
             </a>
-            <a href="#" class="nav-item" data-scroll-to="conditions-section">
+            <a href="#" class="nav-item">
                 <i class="fas fa-file-medical"></i>
                 <span>Conditions</span>
             </a>
-            <a href="#" class="nav-item" data-scroll-to="activity-section">
+            <a href="#" class="nav-item">
                 <i class="fas fa-history"></i>
                 <span>History</span>
             </a>
@@ -101,7 +101,7 @@
         <!-- Dashboard Grid -->
         <div class="dashboard-grid">
             <!-- Live Map Section -->
-            <section class="card card-large map-card" id="dashboard-top">
+            <section class="card card-large map-card">
                 <div class="card-header">
                     <h3><i class="fas fa-map-marked-alt"></i> Live Ambulance Tracking</h3>
                     <div class="map-controls">
@@ -128,7 +128,7 @@
             </section>
             
             <!-- Incoming Ambulances List -->
-            <section class="card card-medium ambulance-list" id="ambulance-section">
+            <section class="card card-medium ambulance-list">
                 <div class="card-header">
                     <h3><i class="fas fa-ambulance"></i> Incoming</h3>
                     <span class="count-badge" id="incoming-count">{{ ambulances.count }} Active</span>
@@ -163,7 +163,7 @@
             </section>
             
             <!-- Bed Availability -->
-            <section class="card card-medium beds-card" id="beds-section">
+            <section class="card card-medium beds-card">
                 <div class="card-header">
                     <h3><i class="fas fa-bed"></i> Bed Availability</h3>
                     <div>
@@ -257,19 +257,12 @@
             </section>
             
             <!-- Staff on Duty -->
-            <section class="card card-medium staff-card" id="staff-section">
+            <section class="card card-medium staff-card">
                 <div class="card-header">
                     <h3><i class="fas fa-users"></i> Staff on Duty</h3>
-                    <div style="display: flex; gap: 0.5rem; align-items: center;">
-                        <button class="btn-sm" id="btn-refresh-staff">
-                            <i class="fas fa-sync-alt"></i>
-                        </button>
-                        {% if is_admin %}
-                        <button class="btn-sm btn-primary" id="btn-add-staff">
-                            <i class="fas fa-plus"></i> Add
-                        </button>
-                        {% endif %}
-                    </div>
+                    <button class="btn-sm" id="btn-refresh-staff">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
                 </div>
                 <div class="staff-list" id="staff-list">
                     {% for member in staff|slice:":5" %}
@@ -298,7 +291,7 @@
             </section>
             
             <!-- Medical Conditions -->
-            <section class="card card-medium conditions-card" id="conditions-section">
+            <section class="card card-medium conditions-card">
                 <div class="card-header">
                     <h3><i class="fas fa-file-medical"></i> Conditions Treated</h3>
                     {% if is_admin %}
@@ -335,7 +328,7 @@
             </section>
             
             <!-- Recent Patients -->
-            <section class="card card-large patients-card" id="patients-section">
+            <section class="card card-large patients-card">
                 <div class="card-header">
                     <h3><i class="fas fa-procedures"></i> Recent Admissions</h3>
                     <div style="display: flex; gap: 0.5rem; align-items: center;">
@@ -397,33 +390,6 @@
                             {% empty %}
                             <tr class="empty-row">
                                 <td colspan="8" class="text-center">No recent admissions</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-            
-            <!-- Activity History -->
-            <section class="card card-large" id="activity-section">
-                <div class="card-header">
-                    <h3><i class="fas fa-history"></i> Recent Activity Log</h3>
-                </div>
-                <div class="table-container">
-                    <table class="data-table">
-                        <tbody id="activity-list">
-                            {% for patient in patients|slice:":5" %}
-                            <tr>
-                                <td style="width: 50px; text-align: center;"><i class="fas fa-user-plus" style="color: var(--primary);"></i></td>
-                                <td><strong>Patient Admitted:</strong> {{ patient.full_name }}</td>
-                                <td style="text-align: right; color: var(--gray-500);"><small>{{ patient.admitted_at|timesince }} ago</small></td>
-                            </tr>
-                            {% endfor %}
-                            {% for entry in ambulances|slice:":5" %}
-                            <tr>
-                                <td style="width: 50px; text-align: center;"><i class="fas fa-ambulance" style="color: var(--secondary);"></i></td>
-                                <td><strong>Ambulance En Route:</strong> {{ entry.vehicle_number }}</td>
-                                <td style="text-align: right; color: var(--gray-500);"><small>{{ entry.last_updated|timesince }} ago</small></td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -584,95 +550,7 @@
         </div>
     </div>
 </div>
-</div>
 {% endif %}
-
-<!-- Add Staff Modal -->
-{% if is_admin %}
-<div id="staffModal" class="modal">
-    <div class="modal-content" style="max-width: 600px;">
-        <div class="modal-header">
-            <h3><i class="fas fa-user-md"></i> Add Staff Member</h3>
-            <button class="close-btn" id="btn-close-staff-modal">&times;</button>
-        </div>
-        <div class="modal-body">
-            <form id="staffForm">
-                {% csrf_token %}
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>First Name</label>
-                        <input type="text" name="first_name" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Last Name</label>
-                        <input type="text" name="last_name" required>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Username</label>
-                        <input type="text" name="username" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Password</label>
-                        <input type="password" name="password" required>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" name="email">
-                    </div>
-                    <div class="form-group">
-                        <label>Phone</label>
-                        <input type="text" name="phone">
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Role</label>
-                        <select name="role" required>
-                            <option value="doctor">Doctor</option>
-                            <option value="nurse">Nurse</option>
-                            <option value="staff">General Staff</option>
-                            <option value="admin">Administrator</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Department</label>
-                        <input type="text" name="department" placeholder="e.g. Cardiology">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn-secondary" id="btn-cancel-staff">Cancel</button>
-                    <button type="submit" class="btn-primary">Add Staff</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-<!-- Patient View Modal -->
-<div id="patientViewModal" class="modal">
-    <div class="modal-content" style="max-width: 600px;">
-        <div class="modal-header">
-            <h3><i class="fas fa-file-medical-alt"></i> Patient History & Details</h3>
-            <button class="close-btn" id="btn-close-patient-view-modal">&times;</button>
-        </div>
-        <div class="modal-body">
-            <div id="patientViewContent">
-                <div class="text-center" style="padding: 2rem;">
-                    <i class="fas fa-spinner fa-spin fa-2x" style="color: var(--primary);"></i>
-                    <p style="margin-top: 1rem;">Loading details...</p>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn-secondary" id="btn-close-patient-view">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
 
 {% load static %}
 <script src="{% static 'js/app.js' %}"></script>

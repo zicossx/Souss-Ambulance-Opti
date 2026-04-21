@@ -25,15 +25,15 @@ class BedAvailabilityAdmin(admin.ModelAdmin):
 
 @admin.register(Ambulance)
 class AmbulanceAdmin(admin.ModelAdmin):
-    list_display = ['vehicle_number', 'first_name', 'last_name', 'status', 'destination_hospital', 'eta_minutes']
-    list_filter = ['is_online', 'destination_hospital']
-    search_fields = ['vehicle_number', 'first_name', 'last_name']
+    list_display = ['vehicle_number', 'driver_name', 'status', 'destination_hospital', 'eta_minutes']
+    list_filter = ['status', 'destination_hospital']
+    search_fields = ['vehicle_number', 'driver_name']
 
 @admin.register(Patient)
 class PatientAdmin(admin.ModelAdmin):
-    list_display = ['first_name', 'last_name', 'cin', 'hospital', 'status', 'assigned_doctor', 'admitted_at']
+    list_display = ['full_name', 'cin', 'hospital', 'status', 'assigned_doctor', 'admitted_at']
     list_filter = ['status', 'hospital', 'gender']
-    search_fields = ['first_name', 'last_name', 'cin', 'phone']
+    search_fields = ['full_name', 'cin', 'phone']
 
 @admin.register(MedicalCondition)
 class MedicalConditionAdmin(admin.ModelAdmin):

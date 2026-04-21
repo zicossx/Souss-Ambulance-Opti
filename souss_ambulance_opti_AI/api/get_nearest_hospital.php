@@ -10,7 +10,7 @@ if ($lat == 0 || $lng == 0) {
 }
 
 try {
-    // Haversine formula approximation (works in MySQL)
+    // Haversine formula in SQLite using approximation
     // distance in km = sqrt((dlat*111)^2 + (dlng*111*cos(lat))^2)
     $stmt = $pdo->prepare("
         SELECT id, name, address, city, phone, emergency_capacity,

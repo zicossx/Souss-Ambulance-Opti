@@ -17,7 +17,7 @@ if (!in_array($userType, ['patient', 'driver'])) {
 $table = $userType . 's'; // patients or drivers
 
 try {
-    $stmt = $pdo->prepare("UPDATE $table SET latitude = ?, longitude = ?, last_updated = NOW() WHERE id = ?");
+    $stmt = $pdo->prepare("UPDATE $table SET latitude = ?, longitude = ?, last_updated = CURRENT_TIMESTAMP WHERE id = ?");
     $stmt->execute([$latitude, $longitude, $userId]);
     
     echo json_encode([

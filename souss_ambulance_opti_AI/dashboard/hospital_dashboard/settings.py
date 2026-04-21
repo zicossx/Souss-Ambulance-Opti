@@ -7,7 +7,7 @@ SECRET_KEY = 'your-secret-key-change-this-in-production'
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -52,16 +52,8 @@ WSGI_APPLICATION = 'hospital_dashboard.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'ambulance_app',
-        'USER': 'root',
-        'PASSWORD': '',
-        'HOST': '127.0.0.1',
-        'PORT': '3306',
-        'OPTIONS': {
-            'charset': 'utf8mb4',
-            'unix_socket': '/opt/lampp/var/mysql/mysql.sock',
-        },
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': Path('/opt/lampp/htdocs/ambulance_api/ambulance_app.db'),
     }
 }
 

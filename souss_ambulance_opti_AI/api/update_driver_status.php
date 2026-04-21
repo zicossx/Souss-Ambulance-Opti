@@ -20,7 +20,7 @@ try {
     $sql = "UPDATE drivers SET is_online = :isonline WHERE id = :id";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([':isonline' => $isOnline, ':id' => $driverId]);
-
+    
     echo json_encode(['success' => true, 'message' => 'Status updated']);
 } catch (PDOException $e) {
     echo json_encode(['success' => false, 'error' => 'Update failed: ' . $e->getMessage()]);

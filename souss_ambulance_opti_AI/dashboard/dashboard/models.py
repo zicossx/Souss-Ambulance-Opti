@@ -16,14 +16,12 @@ class Hospital(models.Model):
     emergency_capacity = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
-    password = models.CharField(max_length=255, null=True, blank=True)
     
     # GPS Coordinates for map center
-    latitude = models.DecimalField(max_digits=10, decimal_places=8, null=True, blank=True)
-    longitude = models.DecimalField(max_digits=11, decimal_places=8, null=True, blank=True)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     
     class Meta:
-        db_table = 'hospitals'
         ordering = ['name']
     
     def __str__(self):
@@ -66,7 +64,6 @@ class BedAvailability(models.Model):
     updated_by = models.ForeignKey(HospitalUser, on_delete=models.SET_NULL, null=True)
     
     class Meta:
-        db_table = 'bed_availability'
         unique_together = ['hospital', 'bed_type']
     
     @property
@@ -85,12 +82,11 @@ class Ambulance(models.Model):
     ]
     
     vehicle_number = models.CharField(max_length=20, unique=True)
-    first_name = models.CharField(max_length=100, db_column='first_name')
-    last_name = models.CharField(max_length=100, db_column='last_name')
-    driver_phone = models.CharField(max_length=20, db_column='phone', null=True, blank=True)
-    is_online = models.BooleanField(default=False, db_column='is_online', null=True, blank=True)
-    current_latitude = models.DecimalField(max_digits=10, decimal_places=8, null=True, blank=True, db_column='latitude')
-    current_longitude = models.DecimalField(max_digits=11, decimal_places=8, null=True, blank=True, db_column='longitude')
+    driver_name = models.CharField(max_length=100)
+    driver_phone = models.CharField(max_length=20)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
+    current_latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    current_longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     destination_hospital = models.ForeignKey(
         Hospital, 
         on_delete=models.SET_NULL, 
@@ -103,20 +99,11 @@ class Ambulance(models.Model):
     eta_minutes = models.IntegerField(null=True, blank=True)
     last_updated = models.DateTimeField(auto_now=True)
     
-    @property
-    def driver_name(self):
-        return f"{self.first_name} {self.last_name}"
-
-    @property
-    def status(self):
-        return 'available' if self.is_online else 'maintenance'
-
     class Meta:
-        db_table = 'drivers'
         ordering = ['-last_updated']
     
     def __str__(self):
-        return f"Ambulance {self.vehicle_number} ({self.driver_name})"
+        return f"Ambulance {self.vehicle_number}"
 
 class Patient(models.Model):
     GENDER_CHOICES = [
@@ -133,8 +120,7 @@ class Patient(models.Model):
     ]
     
     hospital = models.ForeignKey(Hospital, on_delete=models.CASCADE, related_name='patients')
-    first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100)
+    full_name = models.CharField(max_length=200)
     age = models.IntegerField()
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES)
     cin = models.CharField(max_length=20, verbose_name="CIN")  # Moroccan ID
@@ -142,7 +128,7 @@ class Patient(models.Model):
     address = models.TextField()
     condition = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='waiting')
-    admitted_at = models.DateTimeField(auto_now_add=True, db_column='created_at')
+    admitted_at = models.DateTimeField(auto_now_add=True)
     assigned_doctor = models.ForeignKey(
         HospitalUser, 
         on_delete=models.SET_NULL, 
@@ -158,12 +144,7 @@ class Patient(models.Model):
         related_name='patients'
     )
     
-    @property
-    def full_name(self):
-        return f"{self.first_name} {self.last_name}"
-
     class Meta:
-        db_table = 'patients'
         ordering = ['-admitted_at']
     
     def __str__(self):
@@ -187,7 +168,6 @@ class MedicalCondition(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        db_table = 'medical_conditions'
         ordering = ['-severity', 'name']
     
     def __str__(self):

@@ -22,4 +22,27 @@ class Hospital {
     required this.longitude,
     required this.type,
   });
+  factory Hospital.fromJson(Map<String, dynamic> json) {
+    return Hospital(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      nameAr: json['nameAr'] as String,
+      address: json['address'] as String,
+      phone: json['phone'] as String?,
+      // Convert bedsAvailable: if it's a String, parse to int
+      bedsAvailable: json['bedsAvailable'] is int 
+          ? json['bedsAvailable'] 
+          : int.parse(json['bedsAvailable'].toString()),
+      distance: json['distance'] as String,
+      // Convert latitude: handle String or double
+      latitude: json['latitude'] is double 
+          ? json['latitude'] 
+          : double.parse(json['latitude'].toString()),
+      longitude: json['longitude'] is double 
+          ? json['longitude'] 
+          : double.parse(json['longitude'].toString()),
+      type: json['type'] as String,
+    );
+  }
+
 }

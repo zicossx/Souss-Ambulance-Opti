@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../l10n/generated/app_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/providers/app_provider.dart';
-import '../../patient/screens/patient_dashboard_screen.dart';
+import '../../core/services/api_service.dart';
+import '../../core/widgets/auth_scaffold.dart';
+import '../../core/widgets/auth_text_field.dart';
+import '../../core/theme/app_colors.dart';
+import 'patient_dashboard_screen.dart';
 
 class PatientAuthScreen extends StatefulWidget {
   const PatientAuthScreen({super.key});
@@ -13,391 +17,278 @@ class PatientAuthScreen extends StatefulWidget {
 
 class _PatientAuthScreenState extends State<PatientAuthScreen> {
   bool isLogin = true;
+  bool _isLoading = false;
+  
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _ageController = TextEditingController();
+  final _phoneController = TextEditingController();
+  String? _selectedBloodType;
+
+  final List<String> _bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Unknown'];
+
+  Future<void> _signUp() async {
+    setState(() => _isLoading = true);
+    try {
+      final response = await ApiService.post('patient_register', {
+        'first_name': _firstNameController.text.trim(),
+        'last_name': _lastNameController.text.trim(),
+        'email': _emailController.text.trim(),
+        'phone': _phoneController.text.trim(),
+        'password': _passwordController.text,
+        'age': int.tryParse(_ageController.text.trim()) ?? 0,
+        'blood_type': _selectedBloodType ?? 'Unknown',
+      });
+      
+      if (response['success'] == true) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('patient_id', response['user_id']);
+        if (mounted) {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const PatientDashboardScreen()));
+        }
+      } else {
+        _showError(response['message'] ?? 'Registration failed');
+      }
+    } catch (e) {
+      _showError('Connection error: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _signIn() async {
+    setState(() => _isLoading = true);
+    try {
+      final response = await ApiService.post('patient_login', {
+        'email': _emailController.text.trim(),
+        'password': _passwordController.text,
+      });
+      
+      if (response['success'] == true) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('patient_id', response['user']['id']);
+        if (mounted) {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const PatientDashboardScreen()));
+        }
+      } else {
+        _showError(response['message'] ?? 'Invalid credentials');
+      }
+    } catch (e) {
+      _showError('Connection error: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: AppColors.rosePrimary),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final provider = context.watch<AppProvider>();
-    final isArabic = provider.isArabic;
-
-    return Directionality(
-      textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
-      child: Scaffold(
-        body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return AuthScaffold(
+      title: isLogin ? 'Welcome Back' : 'Get Help Fast',
+      subtitle: isLogin ? 'Sign in to access emergency services' : 'Create an account for instant support',
+      form: Column(
+        children: [
+          // Modern Toggle
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withOpacity(0.1)),
+            ),
+            child: Row(
               children: [
-                // Header with Back Button
-                Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).cardTheme.color,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Theme.of(context).dividerTheme.color ?? Colors.grey.shade300,
-                          ),
-                        ),
-                        child: Icon(
-                          isArabic ? Icons.arrow_forward : Icons.arrow_back,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                
-                const SizedBox(height: 32),
-                
-                // Logo
-                Row(
-                  children: [
-                    Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Theme.of(context).colorScheme.primary,
-                            Theme.of(context).colorScheme.primary.withOpacity(0.8),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Icon(
-                        Icons.health_and_safety,
-                        color: Colors.white,
-                        size: 28,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'ATLAS',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                            color: Theme.of(context).colorScheme.onSurface,
-                            letterSpacing: 2,
-                          ),
-                        ),
-                        const Text(
-                          'PATIENT',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFFDC2626),
-                            letterSpacing: 3,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                
-                const SizedBox(height: 40),
-                
-                // Title
-                Text(
-                  isLogin ? l10n.welcomeBack : l10n.createAccount,
-                  style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                    fontSize: 32,
-                  ),
-                ),
-                
-                const SizedBox(height: 8),
-                
-                Text(
-                  isLogin 
-                    ? 'Sign in to request emergency services'
-                    : 'Create an account to get help quickly',
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
-                
-                const SizedBox(height: 32),
-                
-                // Toggle
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardTheme.color,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: Theme.of(context).dividerTheme.color ?? Colors.grey.shade300,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => setState(() => isLogin = true),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            decoration: BoxDecoration(
-                              color: isLogin 
-                                ? const Color(0xFFDC2626)
-                                : Colors.transparent,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              l10n.signIn,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: isLogin ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => setState(() => isLogin = false),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            decoration: BoxDecoration(
-                              color: !isLogin 
-                                ? const Color(0xFFDC2626)
-                                : Colors.transparent,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              l10n.signUp,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: !isLogin ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                
-                const SizedBox(height: 32),
-                
-                // Form - Pass isArabic to both forms
-                AnimatedCrossFade(
-                  firstChild: _buildLoginForm(l10n, isArabic),  // <-- Pass isArabic
-                  secondChild: _buildRegisterForm(l10n, isArabic),  // <-- Pass isArabic
-                  crossFadeState: isLogin 
-                    ? CrossFadeState.showFirst 
-                    : CrossFadeState.showSecond,
-                  duration: const Duration(milliseconds: 300),
-                ),
-                
-                const SizedBox(height: 24),
-                
-                // Social Auth
-                Row(
-                  children: [
-                    Expanded(child: Divider(color: Colors.grey.shade300)),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        l10n.orContinueWith,
-                        style: TextStyle(
-                          color: Colors.grey.shade500,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                    Expanded(child: Divider(color: Colors.grey.shade300)),
-                  ],
-                ),
-                
-                const SizedBox(height: 24),
-                
-                Row(
-                  children: [
-                    Expanded(
-                      child: _SocialButton(
-                        icon: Icons.g_mobiledata,
-                        color: Colors.red,
-                        onTap: () {},
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _SocialButton(
-                        icon: Icons.apple,
-                        color: Theme.of(context).brightness == Brightness.dark 
-                          ? Colors.white 
-                          : Colors.black,
-                        onTap: () {},
-                      ),
-                    ),
-                  ],
-                ),
+                _buildToggleButton('Sign In', isLogin, () => setState(() => isLogin = true)),
+                _buildToggleButton('Register', !isLogin, () => setState(() => isLogin = false)),
               ],
             ),
           ),
-        ),
+          const SizedBox(height: 32),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: isLogin ? _buildLoginForm() : _buildRegisterForm(),
+          ),
+        ],
       ),
     );
   }
 
-  // FIX: Add isArabic parameter
-  Widget _buildLoginForm(AppLocalizations l10n, bool isArabic) {
-    return Column(
-      children: [
-        _buildTextField(
-          label: l10n.email,
-          hint: 'Enter your email or phone',
-          icon: Icons.email_outlined,
-          controller: _emailController,
-        ),
-        const SizedBox(height: 20),
-        _buildTextField(
-          label: l10n.password,
-          hint: 'Enter your password',
-          icon: Icons.lock_outline,
-          isPassword: true,
-          controller: _passwordController,
-        ),
-        const SizedBox(height: 12),
-        Align(
-          alignment: isArabic ? Alignment.centerLeft : Alignment.centerRight,  // FIX: RTL alignment
-          child: TextButton(
-            onPressed: () {},
-            child: Text(
-              l10n.forgotPassword,
-              style: const TextStyle(color: Color(0xFFDC2626)),
+  Widget _buildToggleButton(String title, bool active, VoidCallback onTap) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: active ? AppColors.rosePrimary : Colors.transparent,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: active ? [BoxShadow(color: AppColors.rosePrimary.withOpacity(0.3), blurRadius: 10)] : null,
+          ),
+          child: Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: 13,
+              letterSpacing: 1,
             ),
           ),
         ),
-        const SizedBox(height: 24),
-        ElevatedButton(
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const PatientDashboardScreen()),
-            );
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFDC2626),
-            foregroundColor: Colors.white,
-          ),
-          child: Text(l10n.signIn),
-        ),
-      ],
+      ),
     );
   }
 
-  // FIX: Add isArabic parameter
-  Widget _buildRegisterForm(AppLocalizations l10n, bool isArabic) {
+  Widget _buildLoginForm() {
     return Column(
+      key: const ValueKey('login'),
       children: [
-        _buildTextField(
-          label: l10n.fullName,
-          hint: 'Enter your full name',
-          icon: Icons.person_outline,
-        ),
-        const SizedBox(height: 20),
-        _buildTextField(
-          label: l10n.email,
+        AuthTextField(
+          label: 'Email Address',
           hint: 'Enter your email',
-          icon: Icons.email_outlined,
+          prefixIcon: Icons.email_rounded,
+          controller: _emailController,
         ),
         const SizedBox(height: 20),
-        _buildTextField(
-          label: l10n.phone,
-          hint: 'Enter your phone number',
-          icon: Icons.phone_outlined,
-        ),
-        const SizedBox(height: 20),
-        _buildTextField(
-          label: l10n.password,
-          hint: 'Create a password',
-          icon: Icons.lock_outline,
+        AuthTextField(
+          label: 'Password',
+          hint: 'Enter your password',
+          prefixIcon: Icons.lock_rounded,
           isPassword: true,
+          controller: _passwordController,
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 32),
         ElevatedButton(
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const PatientDashboardScreen()),
-            );
-          },
+          onPressed: _isLoading ? null : _signIn,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFDC2626),
+            backgroundColor: AppColors.rosePrimary,
             foregroundColor: Colors.white,
+            minimumSize: const Size(double.infinity, 56),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 8,
+            shadowColor: AppColors.rosePrimary.withOpacity(0.4),
           ),
-          child: Text(l10n.signUp),  // FIX: Use l10n.signUp instead of isArabic check
+          child: _isLoading
+              ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              : const Text('SIGN IN', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5)),
         ),
       ],
     );
   }
 
-  Widget _buildTextField({
-    required String label,
-    required String hint,
-    required IconData icon,
-    bool isPassword = false,
-    TextEditingController? controller,
-  }) {
+  Widget _buildRegisterForm() {
+    return Column(
+      key: const ValueKey('register'),
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: AuthTextField(
+                label: 'First Name',
+                hint: 'Name',
+                prefixIcon: Icons.person_rounded,
+                controller: _firstNameController,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: AuthTextField(
+                label: 'Last Name',
+                hint: 'Surname',
+                prefixIcon: Icons.person_rounded,
+                controller: _lastNameController,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        AuthTextField(
+          label: 'Email',
+          hint: 'Enter your email',
+          prefixIcon: Icons.email_rounded,
+          controller: _emailController,
+        ),
+        const SizedBox(height: 20),
+        AuthTextField(
+          label: 'Phone',
+          hint: 'Enter phone number',
+          prefixIcon: Icons.phone_rounded,
+          controller: _phoneController,
+        ),
+        const SizedBox(height: 20),
+        AuthTextField(
+          label: 'Age',
+          hint: 'Enter your age',
+          prefixIcon: Icons.calendar_today_rounded,
+          controller: _ageController,
+          keyboardType: TextInputType.number,
+        ),
+        const SizedBox(height: 20),
+        _buildBloodTypeDropdown(),
+        const SizedBox(height: 20),
+        AuthTextField(
+          label: 'Password',
+          hint: 'Create password',
+          prefixIcon: Icons.lock_rounded,
+          isPassword: true,
+          controller: _passwordController,
+        ),
+        const SizedBox(height: 32),
+        ElevatedButton(
+          onPressed: _isLoading ? null : _signUp,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.rosePrimary,
+            foregroundColor: Colors.white,
+            minimumSize: const Size(double.infinity, 56),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 8,
+            shadowColor: AppColors.rosePrimary.withOpacity(0.4),
+          ),
+          child: _isLoading
+              ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              : const Text('CREATE ACCOUNT', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBloodTypeDropdown() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
+        const Text(
+          'BLOOD TYPE',
+          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: AppColors.medicalCyan, letterSpacing: 1.2),
         ),
         const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          obscureText: isPassword,
-          decoration: InputDecoration(
-            hintText: hint,
-            prefixIcon: Icon(icon),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.03),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withOpacity(0.1)),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              isExpanded: true,
+              value: _selectedBloodType,
+              dropdownColor: AppColors.midnightBlue,
+              hint: Text('Select blood type', style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 14)),
+              icon: const Icon(Icons.arrow_drop_down, color: AppColors.medicalCyan),
+              style: const TextStyle(color: Colors.white, fontSize: 15),
+              items: _bloodTypes.map((type) => DropdownMenuItem(value: type, child: Text(type))).toList(),
+              onChanged: (val) => setState(() => _selectedBloodType = val),
+            ),
           ),
         ),
       ],
-    );
-  }
-}
-
-class _SocialButton extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _SocialButton({
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 56,
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: Theme.of(context).dividerTheme.color ?? Colors.grey.shade300,
-          ),
-        ),
-        child: Icon(icon, size: 28, color: color),
-      ),
     );
   }
 }
