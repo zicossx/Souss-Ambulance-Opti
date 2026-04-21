@@ -62,6 +62,3 @@ python manage.py runserver
 
 ---
 
-## 👥 Contributors
-- **zicossx** (Repository Owner)
-- **Wanaim01** (Collaborator)
