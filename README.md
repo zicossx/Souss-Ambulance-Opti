@@ -93,7 +93,7 @@ The system is built using a multi-layer architecture:
 ## 🎥 Demo Video
 
 👉 Watch the demo:  
-https://www.youtube.com/watch?v=pM72y3rL0tg
+https://www.youtube.com/watch?v=sMrC9UXxy4o
 
 ---
 
