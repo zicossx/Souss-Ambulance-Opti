@@ -99,10 +99,10 @@ https://www.youtube.com/watch?v=sMrC9UXxy4o
 
 ## 👥 Team
 
-- **Architects:** OUKHOUYA Anas – REGRAGUI M. – SIOUDA Nour – SOUAK RABAB  
-- **Augmented Team:** WANAIM Abdelhakim – Yahiaoui Zakaria – YOUSFI A. Salma  
+- **Architects:** OUKHOUYA Anas – REGRAGUI Mohammed – SIOUDA Nour – SOUAKH Rabab  
+- **Augmented Team:** WANAIM Abdelhakim – Yahiaoui Zakaria – YOUSFI ALAOUI Salma  
 - **Red Team:** SENANE Y. – SODKI Abla  
-- **Blue Team:** TARIQ S. – TAWFIK Y. M.  
+- **Blue Team:** TARIQ Sabrine – TAWFIK Y. M.  
 - **QA / AI Engineers:** Younsi Safae – Znadi Malake  
 
 ---
