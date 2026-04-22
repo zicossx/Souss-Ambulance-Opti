@@ -13,7 +13,7 @@ souss_ambulance_opti_Manual/
 ├── dispatcher.html         # Operator / dispatch desk UI
 ├── driver.html             # Ambulance driver UI (mobile-friendly)
 ├── diagrams/               # Architecture & database diagrams
-├── report/                 # Project report
+├── report/                 # Project report (French)
 └── sql/
     ├── Tables.sql          # Database schema (13 tables)
     ├── Procedures.sql      # Stored procedures
