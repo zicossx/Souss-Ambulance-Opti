@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Souss Ambulance — Dispatcher</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
+
+  /* NAV */
+  nav { background: #1a1d2e; border-bottom: 1px solid #2d3748; padding: 12px 24px; display: flex; align-items: center; gap: 16px; }
+  nav h1 { font-size: 18px; font-weight: 700; color: #e53e3e; letter-spacing: 1px; }
+  nav span { font-size: 12px; color: #718096; }
+  .nav-tabs { margin-left: auto; display: flex; gap: 4px; }
+  .nav-tab { padding: 6px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; color: #a0aec0; border: none; background: none; }
+  .nav-tab.active { background: #e53e3e; color: white; }
+
+  /* LAYOUT */
+  .page { display: none; padding: 20px 24px; }
+  .page.active { display: block; }
+
+  /* STATS */
+  .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
+  .stat { background: #1a1d2e; border: 1px solid #2d3748; border-radius: 10px; padding: 16px; }
+  .stat-val { font-size: 28px; font-weight: 700; color: #e53e3e; }
+  .stat-label { font-size: 11px; color: #718096; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* GRID */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  /* CARD */
+  .card { background: #1a1d2e; border: 1px solid #2d3748; border-radius: 10px; padding: 16px; }
+  .card h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #718096; margin-bottom: 12px; }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 8px 10px; color: #718096; font-weight: 500; border-bottom: 1px solid #2d3748; font-size: 11px; text-transform: uppercase; }
+  td { padding: 10px; border-bottom: 1px solid #1e2235; }
+  tr:hover td { background: #1e2235; }
+
+  /* BADGE */
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .badge-green { background: #1a3a2a; color: #48bb78; }
+  .badge-red { background: #3a1a1a; color: #fc8181; }
+  .badge-yellow { background: #3a3a1a; color: #f6e05e; }
+  .badge-blue { background: #1a2a3a; color: #63b3ed; }
+  .badge-gray { background: #2d3748; color: #a0aec0; }
+
+  /* FORM */
+  .form-group { margin-bottom: 12px; }
+  label { display: block; font-size: 12px; color: #a0aec0; margin-bottom: 4px; }
+  input, select, textarea { width: 100%; background: #0f1117; border: 1px solid #2d3748; border-radius: 6px; padding: 8px 10px; color: #e2e8f0; font-size: 13px; outline: none; }
+  input:focus, select:focus, textarea:focus { border-color: #e53e3e; }
+  textarea { resize: vertical; min-height: 70px; }
+
+  /* BUTTONS */
+  .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; }
+  .btn-red { background: #e53e3e; color: white; }
+  .btn-red:hover { background: #c53030; }
+  .btn-outline { background: none; border: 1px solid #2d3748; color: #a0aec0; }
+  .btn-outline:hover { border-color: #e53e3e; color: #e53e3e; }
+  .btn-sm { padding: 4px 10px; font-size: 11px; }
+  .btn-green { background: #276749; color: white; }
+  .btn-green:hover { background: #22543d; }
+
+  /* MISSION DISPATCH */
+  .dispatch-form { background: #1a1d2e; border: 1px solid #e53e3e33; border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+  .dispatch-form h3 { color: #e53e3e; margin-bottom: 16px; font-size: 14px; }
+
+  /* SEVERITY */
+  .sev-1 { color: #f6e05e; }
+  .sev-2 { color: #ed8936; }
+  .sev-3 { color: #fc8181; }
+
+  /* TOAST */
+  #toast { position: fixed; bottom: 24px; right: 24px; background: #276749; color: white; padding: 12px 20px; border-radius: 8px; font-size: 13px; display: none; z-index: 999; }
+  #toast.error { background: #c53030; }
+
+  .mb12 { margin-bottom: 12px; }
+  .flex { display: flex; gap: 8px; align-items: center; }
+  .ml-auto { margin-left: auto; }
+  .section-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <h1>🚑 SOUSS AMBULANCE</h1>
+  <span>Centre de Coordination</span>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('dashboard')">Dashboard</button>
+    <button class="nav-tab" onclick="showPage('incidents')">Incidents</button>
+    <button class="nav-tab" onclick="showPage('missions')">Missions</button>
+    <button class="nav-tab" onclick="showPage('ambulances')">Ambulances</button>
+    <button class="nav-tab" onclick="showPage('hospitals')">Hôpitaux</button>
+  </div>
+</nav>
+
+<!-- DASHBOARD -->
+<div id="page-dashboard" class="page active">
+  <div class="stats" id="stats-bar">
+    <div class="stat"><div class="stat-val" id="s-missions">—</div><div class="stat-label">Missions actives</div></div>
+    <div class="stat"><div class="stat-val" id="s-ambulances">—</div><div class="stat-label">Ambulances dispo</div></div>
+    <div class="stat"><div class="stat-val" id="s-incidents">—</div><div class="stat-label">Incidents ouverts</div></div>
+    <div class="stat"><div class="stat-val" id="s-beds">—</div><div class="stat-label">Lits disponibles</div></div>
+    <div class="stat"><div class="stat-val" id="s-occ">—</div><div class="stat-label">Lits occupés</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h3>Derniers incidents</h3>
+      <table><thead><tr><th>Adresse</th><th>Sévérité</th><th>Statut</th></tr></thead>
+      <tbody id="dash-incidents"></tbody></table>
+    </div>
+    <div class="card">
+      <h3>Missions en cours</h3>
+      <table><thead><tr><th>Ambulance</th><th>Hôpital</th><th>Statut</th></tr></thead>
+      <tbody id="dash-missions"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- INCIDENTS -->
+<div id="page-incidents" class="page">
+  <div class="grid2">
+    <div>
+      <div class="section-title">Incidents</div>
+      <div class="card mb12">
+        <table><thead><tr><th>Adresse</th><th>Type</th><th>Sév.</th><th>Statut</th><th></th></tr></thead>
+        <tbody id="incidents-list"></tbody></table>
+      </div>
+    </div>
+    <div>
+      <div class="section-title">Nouveau incident</div>
+      <div class="card">
+        <div class="form-group"><label>Type d'incident</label>
+          <select id="inc-type"></select></div>
+        <div class="form-group"><label>Description</label>
+          <textarea id="inc-desc" placeholder="Détails..."></textarea></div>
+        <div class="form-group"><label>Sévérité (1-5)</label>
+          <input type="number" id="inc-sev" min="1" max="5" value="2"></div>
+        <div class="form-group"><label>Adresse</label>
+          <input type="text" id="inc-addr" placeholder="Adresse de l'incident"></div>
+        <div class="grid2">
+          <div class="form-group"><label>Latitude</label><input type="number" id="inc-lat" step="any" placeholder="30.4278"></div>
+          <div class="form-group"><label>Longitude</label><input type="number" id="inc-lon" step="any" placeholder="-9.5981"></div>
+        </div>
+        <div class="form-group"><label>Victimes estimées</label>
+          <input type="number" id="inc-victims" value="1"></div>
+        <button class="btn btn-red" onclick="createIncident()">Créer l'incident</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DISPATCH FORM -->
+  <div class="dispatch-form" id="dispatch-section" style="display:none">
+    <h3>🚑 Dispatcher une mission — Incident #<span id="dispatch-inc-id"></span></h3>
+    <div class="grid3">
+      <div class="form-group"><label>Ambulance disponible</label>
+        <select id="dispatch-amb"></select></div>
+      <div class="form-group"><label>Latitude incident</label>
+        <input type="number" id="dispatch-lat" step="any"></div>
+      <div class="form-group"><label>Longitude incident</label>
+        <input type="number" id="dispatch-lon" step="any"></div>
+    </div>
+    <div class="flex">
+      <button class="btn btn-red" onclick="dispatchMission()">Créer mission automatique</button>
+      <button class="btn btn-outline" onclick="document.getElementById('dispatch-section').style.display='none'">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- MISSIONS -->
+<div id="page-missions" class="page">
+  <div class="section-title">Missions</div>
+  <div class="card">
+    <table>
+      <thead><tr><th>ID</th><th>Ambulance</th><th>Incident</th><th>Hôpital</th><th>Statut</th><th>Actions</th></tr></thead>
+      <tbody id="missions-list"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- AMBULANCES -->
+<div id="page-ambulances" class="page">
+  <div class="grid2">
+    <div>
+      <div class="section-title">Ambulances</div>
+      <div class="card">
+        <table><thead><tr><th>Code</th><th>Plaque</th><th>Type</th><th>Statut</th></tr></thead>
+        <tbody id="ambulances-list"></tbody></table>
+      </div>
+    </div>
+    <div>
+      <div class="section-title">Ajouter une ambulance</div>
+      <div class="card">
+        <div class="form-group"><label>Code</label><input type="text" id="amb-code" placeholder="AMB-001"></div>
+        <div class="form-group"><label>Plaque</label><input type="text" id="amb-plate" placeholder="12345-A-6"></div>
+        <div class="form-group"><label>Type</label>
+          <select id="amb-type">
+            <option>BLS</option><option>ALS</option><option>MICU</option>
+          </select>
+        </div>
+        <div class="grid2">
+          <div class="form-group"><label>Base Lat</label><input type="number" id="amb-lat" step="any"></div>
+          <div class="form-group"><label>Base Lon</label><input type="number" id="amb-lon" step="any"></div>
+        </div>
+        <button class="btn btn-red" onclick="createAmbulance()">Ajouter</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HOSPITALS -->
+<div id="page-hospitals" class="page">
+  <div class="section-title">Hôpitaux & Capacité</div>
+  <div class="card">
+    <table>
+      <thead><tr><th>Nom</th><th>Ville</th><th>Services</th><th>Lits total</th><th>Occupés</th><th>Dispo</th></tr></thead>
+      <tbody id="hospitals-list"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = "http://localhost:5000/api";
+
+// ── NAVIGATION ────────────────────────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  event.target.classList.add('active');
+
+  // load data for the tab
+  if (name === 'incidents') { loadIncidents(); loadIncidentTypes(); }
+  if (name === 'missions') loadMissions();
+  if (name === 'ambulances') loadAmbulances();
+  if (name === 'hospitals') loadHospitals();
+}
+
+function loadPage(name) {
+  if (name === 'dashboard') loadDashboard();
+  if (name === 'incidents') { loadIncidents(); loadIncidentTypes(); }
+  if (name === 'missions') loadMissions();
+  if (name === 'ambulances') loadAmbulances();
+  if (name === 'hospitals') loadHospitals();
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function toast(msg, error = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = error ? 'error' : '';
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3000);
+}
+
+// ── BADGE HELPERS ─────────────────────────────────────────────────────────────
+function statusBadge(status) {
+  const map = {
+    'AVAILABLE': 'badge-green', 'BUSY': 'badge-red', 'OPEN': 'badge-yellow',
+    'ASSIGNED': 'badge-blue', 'DISPATCHED': 'badge-blue', 'ON_SITE': 'badge-yellow',
+    'AT_HOSPITAL': 'badge-blue', 'COMPLETED': 'badge-green', 'ADMITTED': 'badge-red',
+    'DISCHARGED': 'badge-green'
+  };
+  return `<span class="badge ${map[status] || 'badge-gray'}">${status || '—'}</span>`;
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  const stats = await fetch(API + '/stats').then(r => r.json());
+  document.getElementById('s-missions').textContent = stats.active_missions;
+  document.getElementById('s-ambulances').textContent = stats.available_ambulances;
+  document.getElementById('s-incidents').textContent = stats.open_incidents;
+  document.getElementById('s-beds').textContent = (stats.total_beds || 0) - (stats.occupied_beds || 0);
+  document.getElementById('s-occ').textContent = stats.occupied_beds || 0;
+
+  const incidents = await fetch(API + '/incidents').then(r => r.json());
+  document.getElementById('dash-incidents').innerHTML = incidents.slice(0, 8).map(i => `
+    <tr><td>${i.address || '—'}</td><td>${i.severity || '—'}</td><td>${statusBadge(i.status)}</td></tr>
+  `).join('');
+
+  const missions = await fetch(API + '/missions').then(r => r.json());
+  document.getElementById('dash-missions').innerHTML = missions.filter(m => m.status !== 'COMPLETED').slice(0, 8).map(m => `
+    <tr><td>${m.ambulance_code || '—'}</td><td>${m.hospital_name || '—'}</td><td>${statusBadge(m.status)}</td></tr>
+  `).join('');
+}
+
+// ── INCIDENTS ─────────────────────────────────────────────────────────────────
+async function loadIncidents() {
+  const rows = await fetch(API + '/incidents').then(r => r.json());
+  document.getElementById('incidents-list').innerHTML = rows.map(i => `
+    <tr>
+      <td>${i.address || '—'}</td>
+      <td>${i.incident_type_label || '—'}</td>
+      <td>${i.severity || '—'}</td>
+      <td>${statusBadge(i.status)}</td>
+      <td><button class="btn btn-red btn-sm" onclick="openDispatch(${i.incident_id}, ${i.latitude}, ${i.longitude})">Dispatcher</button></td>
+    </tr>
+  `).join('');
+}
+
+async function loadIncidentTypes() {
+  const types = await fetch(API + '/incident-types').then(r => r.json());
+  document.getElementById('inc-type').innerHTML = types.map(t => `<option value="${t.incident_type_id}">${t.label}</option>`).join('');
+}
+
+async function createIncident() {
+  const body = {
+    incident_type_id: document.getElementById('inc-type').value,
+    description: document.getElementById('inc-desc').value,
+    severity: document.getElementById('inc-sev').value,
+    estimated_victims: document.getElementById('inc-victims').value,
+    address: document.getElementById('inc-addr').value,
+    latitude: document.getElementById('inc-lat').value,
+    longitude: document.getElementById('inc-lon').value,
+  };
+  const res = await fetch(API + '/incidents', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  const data = await res.json();
+  if (res.ok) { toast('Incident créé !'); loadIncidents(); }
+  else toast(data.error || 'Erreur', true);
+}
+
+// ── DISPATCH ──────────────────────────────────────────────────────────────────
+async function openDispatch(incidentId, lat, lon) {
+  document.getElementById('dispatch-section').style.display = 'block';
+  document.getElementById('dispatch-inc-id').textContent = incidentId;
+  document.getElementById('dispatch-lat').value = lat;
+  document.getElementById('dispatch-lon').value = lon;
+  document.getElementById('dispatch-section').dataset.incidentId = incidentId;
+
+  const ambs = await fetch(API + '/ambulances/available').then(r => r.json());
+  document.getElementById('dispatch-amb').innerHTML = ambs.map(a =>
+    `<option value="${a.ambulance_id}">${a.code} — ${a.ambulance_type}</option>`
+  ).join('');
+
+  // NEW: load hospital services
+  const hospitals = await fetch(API + '/hospitals').then(r => r.json());
+  const options = [];
+  hospitals.forEach(h => {
+    (h.services || []).forEach(s => {
+      const free = (s.total_beds || 0) - (s.occupied_beds || 0);
+      options.push(`<option value="${s.service_id}">${h.name} — ${s.service_type} (${free} lits libres)</option>`);
+    });
+  });
+  document.getElementById('dispatch-service').innerHTML = options.join('');
+}
+
+async function dispatchMission() {
+  const body = {
+    incident_id: document.getElementById('dispatch-section').dataset.incidentId,
+    ambulance_id: document.getElementById('dispatch-amb').value,
+    latitude: document.getElementById('dispatch-lat').value,
+    longitude: document.getElementById('dispatch-lon').value,
+  };
+  const res = await fetch(API + '/missions/auto', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  const data = await res.json();
+  if (res.ok) { toast('Mission créée !'); document.getElementById('dispatch-section').style.display = 'none'; loadIncidents(); }
+  else toast(data.error || 'Erreur', true);
+}
+
+// ── MISSIONS ──────────────────────────────────────────────────────────────────
+async function loadMissions() {
+  const rows = await fetch(API + '/missions').then(r => r.json());
+  const steps = ['depart_base_at', 'arrive_scene_at', 'depart_scene_at', 'arrive_hospital_at', 'closed_at'];
+  const stepLabels = ['Départ base', 'Arrivée scène', 'Départ scène', 'Arrivée hôpital', 'Clôturer'];
+  document.getElementById('missions-list').innerHTML = rows.map(m => `
+    <tr>
+      <td>#${m.mission_id}</td>
+      <td>${m.ambulance_code || '—'}</td>
+      <td>${m.incident_address || '—'}</td>
+      <td>${m.hospital_name || '—'}</td>
+      <td>${statusBadge(m.status)}</td>
+      <td>
+        ${steps.map((s, i) => !m[s] ? `<button class="btn btn-outline btn-sm" onclick="updateMission(${m.mission_id}, '${s}')">${stepLabels[i]}</button>` : '').join('')}
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function updateMission(id, field) {
+  const res = await fetch(API + `/missions/${id}/status`, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({field}) });
+  const data = await res.json();
+  if (res.ok) { toast(data.message); loadMissions(); }
+  else toast(data.error || 'Erreur', true);
+}
+
+// ── AMBULANCES ────────────────────────────────────────────────────────────────
+async function loadAmbulances() {
+  const rows = await fetch(API + '/ambulances').then(r => r.json());
+  document.getElementById('ambulances-list').innerHTML = rows.map(a => `
+    <tr><td>${a.code}</td><td>${a.license_plate || '—'}</td><td>${a.ambulance_type}</td><td>${statusBadge(a.status)}</td></tr>
+  `).join('');
+}
+
+async function createAmbulance() {
+  const body = {
+    code: document.getElementById('amb-code').value,
+    license_plate: document.getElementById('amb-plate').value,
+    ambulance_type: document.getElementById('amb-type').value,
+    base_latitude: document.getElementById('amb-lat').value,
+    base_longitude: document.getElementById('amb-lon').value,
+  };
+  const res = await fetch(API + '/ambulances', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  const data = await res.json();
+  if (res.ok) { toast('Ambulance ajoutée !'); loadAmbulances(); }
+  else toast(data.error || 'Erreur', true);
+}
+
+// ── HOSPITALS ─────────────────────────────────────────────────────────────────
+async function loadHospitals() {
+  const rows = await fetch(API + '/hospitals').then(r => r.json());
+  document.getElementById('hospitals-list').innerHTML = rows.map(h => {
+    const services = h.services || [];
+    const totalBeds = services.reduce((s, sv) => s + (sv.total_beds || 0), 0);
+    const occupied = services.reduce((s, sv) => s + (sv.occupied_beds || 0), 0);
+    return `<tr>
+      <td>${h.name}</td>
+      <td>${h.city || '—'}</td>
+      <td>${services.map(s => s.service_type).join(', ') || '—'}</td>
+      <td>${totalBeds}</td>
+      <td>${occupied}</td>
+      <td><span class="badge ${totalBeds - occupied > 0 ? 'badge-green' : 'badge-red'}">${totalBeds - occupied}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+loadDashboard();
+setInterval(loadDashboard, 30000); // auto refresh every 30s
+</script>
+</body>
+</html>

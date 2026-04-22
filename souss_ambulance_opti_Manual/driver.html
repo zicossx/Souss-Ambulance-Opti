@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Souss Ambulance — Chauffeur</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; max-width: 480px; margin: 0 auto; }
+
+  header { background: #1a1d2e; padding: 16px; border-bottom: 1px solid #2d3748; display: flex; align-items: center; gap: 12px; }
+  header h1 { font-size: 16px; font-weight: 700; color: #e53e3e; }
+  .online-dot { width: 8px; height: 8px; background: #48bb78; border-radius: 50%; margin-left: auto; }
+
+  .section { padding: 16px; }
+  .card { background: #1a1d2e; border: 1px solid #2d3748; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+  .card-title { font-size: 11px; text-transform: uppercase; color: #718096; letter-spacing: 0.5px; margin-bottom: 10px; }
+
+  /* STATUS SELECTOR */
+  .amb-selector { display: flex; gap: 8px; margin-bottom: 12px; }
+  select { flex: 1; background: #0f1117; border: 1px solid #2d3748; border-radius: 8px; padding: 10px; color: #e2e8f0; font-size: 14px; outline: none; }
+
+  /* MISSION CARD */
+  .mission-card { background: #1a1d2e; border: 2px solid #e53e3e; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+  .mission-id { font-size: 11px; color: #718096; }
+  .mission-addr { font-size: 16px; font-weight: 600; margin: 6px 0; }
+  .mission-hospital { font-size: 13px; color: #a0aec0; }
+  .mission-status { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; background: #3a1a1a; color: #fc8181; margin: 8px 0; }
+  .mission-status.green { background: #1a3a2a; color: #48bb78; }
+  .mission-status.blue { background: #1a2a3a; color: #63b3ed; }
+  .mission-status.yellow { background: #3a3a1a; color: #f6e05e; }
+
+  /* ACTION BUTTONS */
+  .action-btns { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  .btn { width: 100%; padding: 14px; border-radius: 10px; border: none; cursor: pointer; font-size: 15px; font-weight: 600; }
+  .btn-red { background: #e53e3e; color: white; }
+  .btn-green { background: #276749; color: white; }
+  .btn-blue { background: #2a4a6a; color: white; }
+  .btn-gray { background: #2d3748; color: #a0aec0; }
+  .btn:active { opacity: 0.8; }
+
+  /* GPS */
+  .gps-info { display: flex; justify-content: space-between; font-size: 12px; color: #718096; }
+  .gps-val { color: #e2e8f0; font-weight: 600; }
+
+  /* NO MISSION */
+  .no-mission { text-align: center; padding: 40px 20px; color: #718096; }
+  .no-mission .icon { font-size: 48px; margin-bottom: 12px; }
+
+  /* HISTORY */
+  .history-item { padding: 10px 0; border-bottom: 1px solid #2d3748; font-size: 13px; }
+  .history-item:last-child { border: none; }
+  .history-meta { color: #718096; font-size: 11px; margin-top: 3px; }
+
+  .form-group { margin-bottom: 10px; }
+  label { display: block; font-size: 12px; color: #a0aec0; margin-bottom: 4px; }
+  input { width: 100%; background: #0f1117; border: 1px solid #2d3748; border-radius: 8px; padding: 10px; color: #e2e8f0; font-size: 14px; outline: none; }
+
+  #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #276749; color: white; padding: 12px 24px; border-radius: 20px; font-size: 13px; display: none; z-index: 999; white-space: nowrap; }
+  #toast.error { background: #c53030; }
+</style>
+</head>
+<body>
+
+<header>
+  <span>🚑</span>
+  <h1>SOUSS AMBULANCE</h1>
+  <div class="online-dot"></div>
+</header>
+
+<div class="section">
+
+  <!-- SELECT AMBULANCE -->
+  <div class="card">
+    <div class="card-title">Mon ambulance</div>
+    <div class="amb-selector">
+      <select id="my-ambulance" onchange="selectAmbulance()">
+        <option value="">— Sélectionner —</option>
+      </select>
+    </div>
+    <div class="gps-info">
+      <span>Position GPS</span>
+      <span class="gps-val" id="gps-display">—</span>
+    </div>
+  </div>
+
+  <!-- ACTIVE MISSION -->
+  <div id="mission-section">
+    <div class="no-mission">
+      <div class="icon">🟢</div>
+      <div>Aucune mission active</div>
+      <div style="font-size:12px;margin-top:6px;">En attente de dispatch...</div>
+    </div>
+  </div>
+
+  <!-- GPS TRACKER -->
+  <div class="card" id="gps-card" style="display:none">
+    <div class="card-title">Envoyer position manuellement</div>
+    <div class="form-group"><label>Latitude</label><input type="number" id="manual-lat" step="any"></div>
+    <div class="form-group"><label>Longitude</label><input type="number" id="manual-lon" step="any"></div>
+    <button class="btn btn-gray" style="margin-top:4px" onclick="sendPosition()">📍 Envoyer position</button>
+  </div>
+
+  <!-- MISSION HISTORY -->
+  <div class="card">
+    <div class="card-title">Historique missions</div>
+    <div id="mission-history"><div style="color:#718096;font-size:13px">—</div></div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = "http://localhost:5000/api";
+let currentAmbulanceId = null;
+let currentMission = null;
+let gpsWatchId = null;
+let currentLat = null, currentLon = null;
+
+function toast(msg, error = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = error ? 'error' : '';
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3000);
+}
+
+// ── LOAD AMBULANCES ───────────────────────────────────────────────────────────
+async function loadAmbulances() {
+  const rows = await fetch(API + '/ambulances').then(r => r.json());
+  const sel = document.getElementById('my-ambulance');
+  sel.innerHTML = '<option value="">— Sélectionner —</option>' +
+    rows.map(a => `<option value="${a.ambulance_id}">${a.code} — ${a.ambulance_type} (${a.status})</option>`).join('');
+}
+
+function selectAmbulance() {
+  currentAmbulanceId = document.getElementById('my-ambulance').value;
+  if (currentAmbulanceId) {
+    document.getElementById('gps-card').style.display = 'block';
+    startGPS();
+    loadActiveMission();
+    loadHistory();
+  }
+}
+
+// ── GPS ───────────────────────────────────────────────────────────────────────
+function startGPS() {
+  if (!navigator.geolocation) return;
+  gpsWatchId = navigator.geolocation.watchPosition(pos => {
+    currentLat = pos.coords.latitude;
+    currentLon = pos.coords.longitude;
+    document.getElementById('gps-display').textContent = `${currentLat.toFixed(4)}, ${currentLon.toFixed(4)}`;
+    document.getElementById('manual-lat').value = currentLat;
+    document.getElementById('manual-lon').value = currentLon;
+    // auto send every position update
+    sendPositionAuto(currentLat, currentLon, pos.coords.speed);
+  }, err => {
+    document.getElementById('gps-display').textContent = 'GPS indisponible';
+  }, { enableHighAccuracy: true, maximumAge: 10000 });
+}
+
+async function sendPositionAuto(lat, lon, speed) {
+  if (!currentAmbulanceId) return;
+  await fetch(API + `/ambulances/${currentAmbulanceId}/position`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ latitude: lat, longitude: lon, speed_kmh: speed || 0 })
+  });
+}
+
+async function sendPosition() {
+  const lat = document.getElementById('manual-lat').value;
+  const lon = document.getElementById('manual-lon').value;
+  if (!lat || !lon) { toast('Entrez les coordonnées', true); return; }
+  await sendPositionAuto(lat, lon, 0);
+  toast('Position envoyée !');
+}
+
+// ── ACTIVE MISSION ────────────────────────────────────────────────────────────
+async function loadActiveMission() {
+  if (!currentAmbulanceId) return;
+  const missions = await fetch(API + '/missions').then(r => r.json());
+  const active = missions.find(m =>
+    String(m.ambulance_id) === String(currentAmbulanceId) &&
+    !['COMPLETED', 'CANCELLED'].includes(m.status)
+  );
+
+  const section = document.getElementById('mission-section');
+
+  if (!active) {
+    currentMission = null;
+    section.innerHTML = `<div class="no-mission"><div class="icon">🟢</div><div>Aucune mission active</div><div style="font-size:12px;margin-top:6px;">En attente de dispatch...</div></div>`;
+    return;
+  }
+
+  currentMission = active;
+  const statusColor = { DISPATCHED: '', ON_SITE: 'yellow', AT_HOSPITAL: 'blue', COMPLETED: 'green' };
+
+  const steps = [
+    { field: 'depart_base_at', label: '🚀 Départ de la base', done: active.depart_base_at },
+    { field: 'arrive_scene_at', label: '📍 Arrivée sur scène', done: active.arrive_scene_at },
+    { field: 'depart_scene_at', label: '🏥 Départ vers hôpital', done: active.depart_scene_at },
+    { field: 'arrive_hospital_at', label: '✅ Arrivée hôpital', done: active.arrive_hospital_at },
+    { field: 'closed_at', label: '🔒 Clôturer mission', done: active.closed_at },
+  ];
+
+  const nextStep = steps.find(s => !s.done);
+
+  section.innerHTML = `
+    <div class="mission-card">
+      <div class="mission-id">Mission #${active.mission_id}</div>
+      <div class="mission-addr">📍 ${active.incident_address || '—'}</div>
+      <div class="mission-hospital">🏥 ${active.hospital_name || '—'}</div>
+      <div class="mission-status ${statusColor[active.status] || ''}">${active.status}</div>
+      <div class="action-btns">
+        ${nextStep ? `<button class="btn btn-red" onclick="updateStep('${nextStep.field}')">${nextStep.label}</button>` : '<div style="color:#48bb78;text-align:center;font-size:14px">✅ Mission terminée</div>'}
+        ${steps.filter(s => s.done).map(s => `<div style="font-size:12px;color:#48bb78;">✓ ${s.label}</div>`).join('')}
+      </div>
+    </div>
+  `;
+}
+
+async function updateStep(field) {
+  if (!currentMission) return;
+  
+  const body = {};
+  body[field] = new Date().toISOString();
+  const res = await fetch(API + `/missions/${currentMission.mission_id}/status`, {
+    method: 'PATCH',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ field })
+  });
+  const data = await res.json();
+  if (res.ok) { toast(data.message); loadActiveMission(); loadHistory(); }
+  else toast(data.error || 'Erreur', true);
+}
+
+// ── HISTORY ───────────────────────────────────────────────────────────────────
+async function loadHistory() {
+  if (!currentAmbulanceId) return;
+  const missions = await fetch(API + '/missions').then(r => r.json());
+  const mine = missions.filter(m => String(m.ambulance_id) === String(currentAmbulanceId)).slice(0, 10);
+  document.getElementById('mission-history').innerHTML = mine.length
+    ? mine.map(m => `
+        <div class="history-item">
+          <div>${m.incident_address || '—'} → ${m.hospital_name || '—'}</div>
+          <div class="history-meta">#${m.mission_id} · ${m.status} · ${new Date(m.created_at).toLocaleDateString('fr')}</div>
+        </div>
+      `).join('')
+    : '<div style="color:#718096;font-size:13px">Aucune mission</div>';
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+loadAmbulances();
+// refresh mission every 20s
+setInterval(() => { if (currentAmbulanceId) loadActiveMission(); }, 20000);
+</script>
+</body>
+</html>
